@@ -1,62 +1,36 @@
-import 'package:Tosell/Features/orders/models/Order.dart';
-import 'package:Tosell/Features/orders/models/order_enum.dart';
+import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
 import 'package:Tosell/core/constants/spaces.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart';
+import 'package:Tosell/Features/orders/models/order_enum.dart';
 
-class OrderCardItem extends ConsumerWidget {
-  final Order order;
+class ShipmentCartItem extends ConsumerWidget {
+  final Shipment shipment;
   final Function? onTap;
-  final bool isSelectionMode;
 
-  const OrderCardItem({
-    required this.order,
+  const ShipmentCartItem({
+    required this.shipment,
     this.onTap,
-    this.isSelectionMode = false,
     super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var theme = Theme.of(context);
-    DateTime date = DateTime.parse(order.creationDate ?? DateTime.now().toString());
-    
-    final selectedOrders = ref.watch(selectedOrdersProvider);
-    // Use code as fallback if id is null
-    final orderId = order.id ?? order.code ?? '';
-    final isSelected = selectedOrders.contains(orderId);
-    
+    DateTime date = DateTime.parse(
+        shipment.creationDate ?? DateTime.now().toIso8601String());
     return GestureDetector(
-      onTap: () {
-        if (isSelectionMode) {
-          // In selection mode, toggle selection
-          if (orderId.isNotEmpty) {
-            ref.read(selectedOrdersProvider.notifier).toggleOrder(orderId);
-          }
-        } else {
-          // Normal mode, call original onTap
-          onTap?.call();
-        }
-      },
+      onTap: () => onTap?.call(),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        child: Container(
           margin: const EdgeInsets.only(bottom: 5),
           padding: const EdgeInsets.only(right: 2, left: 2, bottom: 2),
           decoration: BoxDecoration(
-            border: Border.all(
-              color: isSelected 
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
-              width: isSelected ? 2 : 1,
-            ),
-            color: isSelected 
-              ? theme.colorScheme.primary.withOpacity(0.1)
-              : const Color(0xffEAEEF0),
+            border: Border.all(color: theme.colorScheme.outline),
+            color: const Color(0xffEAEEF0),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
@@ -69,39 +43,26 @@ class OrderCardItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        // Checkbox in selection mode or box icon in normal mode
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(isSelectionMode ? 8 : 1000),
+                            borderRadius: BorderRadius.circular(1000),
                             color: theme.colorScheme.surface,
-                            border: isSelectionMode ? Border.all(
-                              color: isSelected 
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outline
-                            ) : null,
                           ),
-                          child: isSelectionMode 
-                            ? Icon(
-                                isSelected ? Icons.check : null,
-                                size: 16,
-                                color: theme.colorScheme.primary,
-                              )
-                            : SvgPicture.asset(
-                                "assets/svg/box.svg",
-                                width: 24,
-                                height: 24,
-                                color: theme.colorScheme.primary,
-                              ),
+                          child: SvgPicture.asset(
+                            "assets/svg/box.svg",
+                            width: 24,
+                            height: 24,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                         const SizedBox(width: 7),
-                        
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                order.code ?? "لايوجد",
+                                shipment.code ?? "لايوجد",
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
                                   fontSize: 16,
@@ -122,7 +83,7 @@ class OrderCardItem extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        _buildOrderStatus(order.status ?? 0),
+                        _buildOrderStatus(shipment.status ?? 0),
                         const Gap(AppSpaces.small),
                       ],
                     ),
@@ -141,43 +102,20 @@ class OrderCardItem extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          buildSection(
-                            order.customerName ?? "لايوجد",
-                            "assets/svg/User.svg",
-                            theme,
-                          ),
+                          buildSection("طلبات/${shipment.ordersCount}",
+                              "assets/svg/48. Files.svg", theme,
+                              textColor: Colors.black),
                           VerticalDivider(
                             width: 1,
                             thickness: 1,
                             color: theme.colorScheme.outline,
                           ),
                           const Gap(AppSpaces.small),
-                          buildSection(order.content ?? "لايوجد",
-                              "assets/svg/box.svg", theme),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      height: 1,
-                      width: double.infinity,
-                      color: theme.colorScheme.outline,
-                    ),
-                    IntrinsicHeight(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
                           buildSection(
-                              order.deliveryZone?.governorate?.name ?? "لايوجد",
-                              "assets/svg/MapPinLine.svg",
-                              theme),
-                          VerticalDivider(
-                            width: 1,
-                            thickness: 1,
-                            color: theme.colorScheme.outline,
-                          ),
-                          const Gap(AppSpaces.small),
-                          buildSection(order.deliveryZone?.name ?? "لايوجد",
-                              "assets/svg/MapPinArea.svg", theme),
+                              "التجار/${shipment.merchantsCount}",
+                              "assets/svg/User.svg",
+                              theme,
+                              textColor: Colors.black),
                         ],
                       ),
                     ),
@@ -192,7 +130,7 @@ class OrderCardItem extends ConsumerWidget {
   }
 
   Widget _buildOrderStatus(int index) {
-    // Ensure index is within bounds
+    // التأكد من أن الفهرس ضمن الحدود المسموحة
     if (index >= orderStatus.length) {
       index = 0;
     }
@@ -222,6 +160,7 @@ Widget buildSection(
   void Function()? onTap,
   EdgeInsets? padding,
   double? textWidth,
+  Color? textColor,
 }) {
   return Expanded(
     child: GestureDetector(
@@ -252,7 +191,7 @@ Widget buildSection(
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    color: theme.colorScheme.secondary,
+                    color: textColor ?? theme.colorScheme.secondary,
                     fontFamily: "Tajawal",
                     overflow: TextOverflow.ellipsis,
                   ),

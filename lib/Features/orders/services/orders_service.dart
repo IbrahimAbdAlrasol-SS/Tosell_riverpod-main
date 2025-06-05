@@ -1,6 +1,6 @@
+import 'package:Tosell/Features/orders/models/Order.dart';
 import 'package:Tosell/core/Client/BaseClient.dart';
 import 'package:Tosell/core/Client/ApiResponse.dart';
-import 'package:Tosell/Features/orders/models/Order.dart';
 import 'package:Tosell/Features/order/models/add_order_form.dart';
 
 class OrdersService {
@@ -10,7 +10,20 @@ class OrdersService {
       : baseClient =
             BaseClient<Order>(fromJson: (json) => Order.fromJson(json));
 
+  // For delegate/shipment orders (استحصال)
   Future<ApiResponse<Order>> getOrders(
+      {int page = 1, Map<String, dynamic>? queryParams}) async {
+    try {
+      var result = await baseClient.getAll(
+          endpoint: '/order/delegate', page: page, queryParams: queryParams);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // For merchant orders (original)
+  Future<ApiResponse<Order>> getMerchantOrders(
       {int page = 1, Map<String, dynamic>? queryParams}) async {
     try {
       var result = await baseClient.getAll(
@@ -21,11 +34,29 @@ class OrdersService {
     }
   }
 
-  Future<(Order?, String?)> changeOrderState({String? code}) async {
+  Future<(Order?, String?)> changeOrderState({String? id}) async {
     try {
-      var result =
-          await baseClient.update(endpoint: '/order/$code/advance-step');
+      var result = await baseClient.update(endpoint: '/order/$id/status/received');
       return (result.singleData, result.message);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Advance order step (for merchants)
+  Future<(Order?, String?)> advanceOrderStep({String? code}) async {
+    try {
+      var result = await baseClient.update(endpoint: '/order/$code/advance-step');
+      return (result.singleData, result.message);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Order?>? getOrderById({required String id}) async {
+    try {
+      var result = await baseClient.getById(endpoint: '/order', id: id);
+      return result.singleData;
     } catch (e) {
       rethrow;
     }
@@ -58,6 +89,20 @@ class OrdersService {
       if (result.singleData == null) return (null, result.message);
 
       return (result.singleData, null);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // New method for creating shipment
+  Future<bool> createShipment(Map<String, dynamic> shipmentData) async {
+    try {
+      var result = await baseClient.create(
+        endpoint: '/shipment/pick-up', 
+        data: shipmentData
+      );
+      
+      return result.code == 200 || result.code == 201;
     } catch (e) {
       rethrow;
     }
