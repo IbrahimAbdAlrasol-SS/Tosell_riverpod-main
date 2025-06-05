@@ -52,5 +52,5 @@ final selectionModeProvider = StateProvider<bool>((ref) => false);
 /// Provider لحالة إنشاء الشحنة (loading state)
 final createShipmentLoadingProvider = StateProvider<bool>((ref) => false);
 
-/// Provider للتبويب النشط
-final activeTabProvider = StateProvider<int>((ref) => 0); // 0 = طلبات, 1 = شحنات
+/// Provider للتبويب النشط (0 = طلبات, 1 = شحنات)
+final activeTabProvider = StateProvider<int>((ref) => 0);

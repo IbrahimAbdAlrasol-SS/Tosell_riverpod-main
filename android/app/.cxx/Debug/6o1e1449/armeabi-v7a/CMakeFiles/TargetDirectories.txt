@@ -1,0 +1,2 @@
+F:/Tosell_riverpod-main/android/app/.cxx/Debug/6o1e1449/armeabi-v7a/CMakeFiles/edit_cache.dir
+F:/Tosell_riverpod-main/android/app/.cxx/Debug/6o1e1449/armeabi-v7a/CMakeFiles/rebuild_cache.dir

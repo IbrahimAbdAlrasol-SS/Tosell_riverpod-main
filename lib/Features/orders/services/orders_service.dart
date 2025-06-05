@@ -34,9 +34,10 @@ class OrdersService {
     }
   }
 
-  Future<(Order?, String?)> changeOrderState({String? id}) async {
+  // ✅ تم إصلاح المشكلة - تغيير id إلى code
+  Future<(Order?, String?)> changeOrderState({required String code}) async {
     try {
-      var result = await baseClient.update(endpoint: '/order/$id/status/received');
+      var result = await baseClient.update(endpoint: '/order/$code/status/received');
       return (result.singleData, result.message);
     } catch (e) {
       rethrow;
@@ -44,7 +45,7 @@ class OrdersService {
   }
 
   // Advance order step (for merchants)
-  Future<(Order?, String?)> advanceOrderStep({String? code}) async {
+  Future<(Order?, String?)> advanceOrderStep({required String code}) async {
     try {
       var result = await baseClient.update(endpoint: '/order/$code/advance-step');
       return (result.singleData, result.message);
@@ -71,10 +72,11 @@ class OrdersService {
     }
   }
 
+  // ✅ تم إصلاح المشكلة - إضافة / قبل code
   Future<bool> validateCode({required String code}) async {
     try {
       var result =
-          await BaseClient<bool>().get(endpoint: '/order$code/available');
+          await BaseClient<bool>().get(endpoint: '/order/$code/available');
       return result.singleData ?? false;
     } catch (e) {
       rethrow;
@@ -94,7 +96,7 @@ class OrdersService {
     }
   }
 
-  // New method for creating shipment
+  // ✅ إضافة method لإنشاء الشحنة
   Future<bool> createShipment(Map<String, dynamic> shipmentData) async {
     try {
       var result = await baseClient.create(

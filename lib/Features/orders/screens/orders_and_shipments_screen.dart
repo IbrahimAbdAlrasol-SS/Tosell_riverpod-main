@@ -45,10 +45,13 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         page: 1,
         queryParams: _currentFilter?.toJson(),
       );
+      
       // جلب الشحنات
-      ref.read(shipmentsNotifierProvider.notifier).getAll(
-        page: 1,
-      );
+      if (ref.read(activeTabProvider) == 1) {
+        ref.read(shipmentsNotifierProvider.notifier).getAll(
+          page: 1,
+        );
+      }
     });
   }
 
@@ -287,22 +290,22 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
                   }
                 },
                 itemBuilder: (context) => [
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'select_all',
                     child: Row(
                       children: [
                         Icon(Icons.select_all, size: 20),
-                        const Gap(AppSpaces.small),
+                        Gap(AppSpaces.small),
                         Text('تحديد الكل'),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'clear_all',
                     child: Row(
                       children: [
                         Icon(Icons.clear_all, size: 20),
-                        const Gap(AppSpaces.small),
+                        Gap(AppSpaces.small),
                         Text('إلغاء التحديد'),
                       ],
                     ),
@@ -479,10 +482,14 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
 
   void _switchTab(int tabIndex) {
     ref.read(activeTabProvider.notifier).state = tabIndex;
+    
     // إلغاء وضع التحديد عند تغيير التبويب
     if (tabIndex == 1) {
       ref.read(selectionModeProvider.notifier).state = false;
       ref.read(selectedOrdersProvider.notifier).clearSelection();
+      
+      // جلب بيانات الشحنات إذا لم تكن محملة
+      ref.read(shipmentsNotifierProvider.notifier).getAll(page: 1);
     }
   }
 
