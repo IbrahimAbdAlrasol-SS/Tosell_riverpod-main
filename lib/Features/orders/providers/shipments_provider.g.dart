@@ -1,3 +1,4 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'shipments_provider.dart';
 
@@ -5,7 +6,7 @@ part of 'shipments_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$shipmentsNotifierHash() => r'dd93a310689432d411e1b496d9b8392724c70b94';
+String _$shipmentsNotifierHash() => r'7360d5f8a8fee4abcd6eed985dc38da251bec8f3';
 
 /// See also [ShipmentsNotifier].
 @ProviderFor(ShipmentsNotifier)
