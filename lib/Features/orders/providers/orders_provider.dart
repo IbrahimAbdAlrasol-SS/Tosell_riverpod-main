@@ -24,10 +24,8 @@ class OrdersNotifier extends _$OrdersNotifier {
     // Set the state to loading before starting the async operation
     state = const AsyncValue.loading();
 
-    //? Added To Object
-
     try {
-      // Perform the API call to add the order
+      // ✅ إصلاح: استخدام addOrder مع المعامل الصحيح
       var result = await _service.addOrder(orderForm: form);
 
       // Update the state with the result if successful

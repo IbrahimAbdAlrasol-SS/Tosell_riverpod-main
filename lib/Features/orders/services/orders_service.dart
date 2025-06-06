@@ -84,10 +84,10 @@ class OrdersService {
     }
   }
 
-  Future<(Order? order, String? error)> addOrder(AddOrderForm form) async {
+  Future<(Order? order, String? error)> addOrder({required AddOrderForm orderForm}) async {
     try {
       var result =
-          await baseClient.create(endpoint: '/order', data: form.toJson());
+          await baseClient.create(endpoint: '/order', data: orderForm.toJson());
       if (result.singleData == null) return (null, result.message);
       return (result.singleData, null);
     } catch (e) {
