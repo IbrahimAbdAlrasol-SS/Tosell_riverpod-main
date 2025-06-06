@@ -1,4 +1,4 @@
-// lib/Features/orders/widgets/shipment_cart_item.dart - محدث
+// lib/Features/orders/widgets/shipment_cart_item.dart
 import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
@@ -24,18 +24,17 @@ class ShipmentCartItem extends ConsumerWidget {
         shipment.creationDate ?? DateTime.now().toIso8601String());
     
     return GestureDetector(
-      onTap: () => onTap?.call(), // ✅ استخدام onTap الذي تم تمريره من الصفحة الرئيسية
+      onTap: () => onTap?.call(),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200), // ✅ إضافة animation للتفاعل
+          duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 5),
           padding: const EdgeInsets.only(right: 2, left: 2, bottom: 2),
           decoration: BoxDecoration(
             border: Border.all(color: theme.colorScheme.outline),
             color: const Color(0xffEAEEF0),
             borderRadius: BorderRadius.circular(24),
-            // ✅ إضافة shadow خفيف للتحسين البصري
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -54,26 +53,25 @@ class ShipmentCartItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        // أيقونة الشحنة مع تحسين بصري
+                        // أيقونة الشحنة
                         Container(
-                          padding: const EdgeInsets.all(6), // ✅ حجم أكبر قليلاً
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(1000),
                             color: theme.colorScheme.surface,
-                            // ✅ إضافة border خفيف
                             border: Border.all(
                               color: theme.colorScheme.primary.withOpacity(0.2),
                               width: 1,
                             ),
                           ),
                           child: SvgPicture.asset(
-                            "assets/svg/navigation_box.svg", // ✅ أيقونة شحنة أوضح
+                            "assets/svg/box.svg", // يمكن استخدام أيقونة شحنة مختلفة
                             width: 24,
                             height: 24,
                             color: theme.colorScheme.primary,
                           ),
                         ),
-                        const SizedBox(width: 10), // ✅ مسافة أوضح
+                        const SizedBox(width: 10),
                         
                         // معلومات الشحنة
                         Expanded(
@@ -90,7 +88,6 @@ class ShipmentCartItem extends ConsumerWidget {
                                   fontFamily: "Tajawal",
                                 ),
                               ),
-                              // ✅ إضافة معلومة إضافية عن نوع الشحنة
                               Row(
                                 children: [
                                   Text(
@@ -124,7 +121,7 @@ class ShipmentCartItem extends ConsumerWidget {
                           ),
                         ),
                         
-                        // حالة الشحنة مع تحسين
+                        // حالة الشحنة
                         _buildShipmentStatus(shipment.status ?? 0, theme),
                         const Gap(AppSpaces.small),
                       ],
@@ -133,13 +130,12 @@ class ShipmentCartItem extends ConsumerWidget {
                 ),
               ),
               
-              // تفاصيل الشحنة مع تحسين التصميم
+              // تفاصيل الشحنة
               Container(
-                padding: const EdgeInsets.all(12), // ✅ حجم أكبر قليلاً
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
-                  // ✅ إضافة border خفيف
                   border: Border.all(
                     color: theme.colorScheme.outline.withOpacity(0.3),
                     width: 0.5,
@@ -155,7 +151,7 @@ class ShipmentCartItem extends ConsumerWidget {
                             "الطلبات: ${shipment.ordersCount ?? 0}",
                             "assets/svg/box.svg", 
                             theme,
-                            textColor: theme.colorScheme.onSurface, // ✅ لون أوضح
+                            textColor: theme.colorScheme.onSurface,
                           ),
                           VerticalDivider(
                             width: 1,
@@ -167,7 +163,7 @@ class ShipmentCartItem extends ConsumerWidget {
                             "التجار: ${shipment.merchantsCount ?? 0}",
                             "assets/svg/User.svg",
                             theme,
-                            textColor: theme.colorScheme.onSurface, // ✅ لون أوضح
+                            textColor: theme.colorScheme.onSurface,
                           ),
                         ],
                       ),
@@ -182,7 +178,7 @@ class ShipmentCartItem extends ConsumerWidget {
     );
   }
 
-  /// ✅ تحسين مظهر حالة الشحنة
+  /// حالة الشحنة
   Widget _buildShipmentStatus(int statusIndex, ThemeData theme) {
     int safeIndex = statusIndex;
     if (safeIndex < 0 || safeIndex >= orderStatus.length) {
@@ -190,12 +186,11 @@ class ShipmentCartItem extends ConsumerWidget {
     }
     
     return Container(
-      width: 90, // ✅ عرض أصغر قليلاً
-      height: 28, // ✅ ارتفاع أكبر قليلاً
+      width: 90,
+      height: 28,
       decoration: BoxDecoration(
         color: orderStatus[safeIndex].color,
         borderRadius: BorderRadius.circular(20),
-        // ✅ إضافة border للوضوح
         border: Border.all(
           color: (orderStatus[safeIndex].textColor ?? Colors.black).withOpacity(0.2),
           width: 0.5,
@@ -205,12 +200,12 @@ class ShipmentCartItem extends ConsumerWidget {
         child: Text(
           orderStatus[safeIndex].name ?? 'غير محدد',
           style: TextStyle(
-            fontSize: 11, // ✅ خط أصغر قليلاً ليتناسب
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: orderStatus[safeIndex].textColor ?? Colors.black,
           ),
           textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis, // ✅ منع الطفح
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -228,7 +223,7 @@ class ShipmentCartItem extends ConsumerWidget {
   }
 }
 
-/// ✅ تحسين widget المقطع مع ألوان أوضح
+/// widget المقطع
 Widget buildSection(
   String title,
   String iconPath,
@@ -251,7 +246,7 @@ Widget buildSection(
               padding: padding ?? const EdgeInsets.all(0),
               child: SvgPicture.asset(
                 iconPath,
-                width: 20, // ✅ حجم أصغر قليلاً للتوازن
+                width: 20,
                 height: 20,
                 color: isRed
                     ? theme.colorScheme.error
@@ -260,15 +255,15 @@ Widget buildSection(
                         : theme.colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 8), // ✅ مسافة أصغر
+            const SizedBox(width: 8),
             Expanded(
               child: SizedBox(
                 width: textWidth,
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14, // ✅ خط أوضح
-                    fontWeight: FontWeight.w500, // ✅ وزن أوضح
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: textColor ?? theme.colorScheme.secondary,
                     fontFamily: "Tajawal",
                     overflow: TextOverflow.ellipsis,

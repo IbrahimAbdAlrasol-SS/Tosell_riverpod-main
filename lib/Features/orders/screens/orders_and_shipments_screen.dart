@@ -18,7 +18,6 @@ import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart'
 import 'package:Tosell/Features/orders/providers/shipments_provider.dart';
 import 'package:Tosell/Features/orders/widgets/shipment_cart_item.dart';
 import 'package:Tosell/Features/orders/screens/orders_filter_bottom_sheet.dart';
-import 'package:Tosell/core/utils/GlobalToast.dart';
 import 'package:Tosell/Features/orders/services/orders_service.dart';
 
 class OrdersAndShipmentsScreen extends ConsumerStatefulWidget {
@@ -81,7 +80,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
               // شريط البحث والفلترة
               _buildSearchAndFilterBar(),
               
-              const Gap(8), // تقليل المسافة
+              const Gap(8),
               
               // التبويبات المحسنة
               _buildImprovedTabs(activeTab),
@@ -184,15 +183,15 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     );
   }
 
-  /// ✅ Tab bar محسن ومصغر
+  /// تبويبات محسنة ومصغرة
   Widget _buildImprovedTabs(int activeTab) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Container(
-        height: 40, // ✅ ارتفاع مصغر
+        height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA), // لون خلفية فاتح
-          borderRadius: BorderRadius.circular(6), // زوايا أقل
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
             width: 1,
@@ -216,7 +215,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     );
   }
 
-  /// ✅ عنصر تبويب مضغوط ومحسن
+  /// عنصر تبويب مضغوط
   Widget _buildCompactTabItem({
     required String title,
     required bool isActive,
@@ -227,7 +226,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.all(3), // هامش داخلي صغير
+          margin: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: isActive 
               ? Theme.of(context).colorScheme.primary
@@ -245,7 +244,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 14, // ✅ خط أصغر
+                fontSize: 14,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: isActive 
                   ? Colors.white
@@ -334,12 +333,12 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
                 ],
               ),
             
-            // زر التحديد المتعدد محسن
+            // زر التحديد المتعدد
             GestureDetector(
               onTap: _toggleSelectionMode,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 36, // حجم أصغر
+                width: 36,
                 height: 36,
                 decoration: BoxDecoration(
                   color: selectionMode 
@@ -363,7 +362,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
                   color: selectionMode 
                     ? Colors.white
                     : Theme.of(context).colorScheme.primary,
-                  size: 18, // أيقونة أصغر
+                  size: 18,
                 ),
               ),
             ),
@@ -414,11 +413,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         },
         itemBuilder: (context, shipment, index) => ShipmentCartItem(
           shipment: shipment,
-          onTap: () => context.push(AppRoutes.orders,
-              extra: OrderFilter(
-                  shipmentId: shipment.id, 
-                  shipmentCode: shipment.code)),
-                  
+          onTap: () => _navigateToShipmentDetails(shipment),
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -480,7 +475,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         isLoading: isLoading,
         onPressed: _createShipment,
         icon: SvgPicture.asset(
-          "assets/svg/navigation_box.svg",
+          "assets/svg/box.svg", // استخدام أيقونة متاحة
           color: Colors.white,
           width: 24,
           height: 24,
@@ -591,7 +586,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     });
   }
 
-  /// ✅ إنشاء الشحنة مع البيانات الصحيحة
+  /// إنشاء الشحنة
   Future<void> _createShipment() async {
     final selectedOrderIds = ref.read(selectedOrdersProvider);
     if (selectedOrderIds.isEmpty) return;
@@ -599,19 +594,20 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     ref.read(createShipmentLoadingProvider.notifier).state = true;
     
     try {
-      // ✅ استخدام الـ API المحدث مع البيانات الصحيحة
       final success = await OrdersService().createShipment(
         orderIds: selectedOrderIds,
-        delivered: true, // إضافة القيمة المطلوبة
-        // delegateId و merchantId اختياريان - يمكن إضافتهما لاحقاً إذا لزم الأمر
+        delivered: true,
       );
 
       if (success) {
-        GlobalToast.show(
-          message: "تم إنشاء الشحنة بنجاح",
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("تم إنشاء الشحنة بنجاح"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         
         // إعادة تعيين الحالة
         ref.read(selectionModeProvider.notifier).state = false;
@@ -620,23 +616,71 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         // تحديث البيانات
         _fetchInitialData();
         
-        // التنقل لتبويب الشحنات لرؤية الشحنة الجديدة
+        // التنقل لتبويب الشحنات
         _switchTab(1);
       } else {
-        GlobalToast.show(
-          message: "فشل في إنشاء الشحنة",
-          backgroundColor: Theme.of(context).colorScheme.error,
-          textColor: Colors.white,
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("فشل في إنشاء الشحنة"),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       }
     } catch (e) {
-      GlobalToast.show(
-        message: "حدث خطأ: ${e.toString()}",
-        backgroundColor: Theme.of(context).colorScheme.error,
-        textColor: Colors.white,
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("حدث خطأ: ${e.toString()}"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       ref.read(createShipmentLoadingProvider.notifier).state = false;
+    }
+  }
+
+  /// التنقل لتفاصيل الشحنة
+  void _navigateToShipmentDetails(shipment) {
+    try {
+      // يمكن إضافة route مخصص هنا
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('تفاصيل الشحنة ${shipment.code}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('رقم الشحنة: ${shipment.code ?? "غير محدد"}'),
+              Text('عدد الطلبات: ${shipment.ordersCount ?? 0}'),
+              Text('عدد التجار: ${shipment.merchantsCount ?? 0}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('إغلاق'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.push(AppRoutes.orders,
+                    extra: OrderFilter(
+                        shipmentId: shipment.id, 
+                        shipmentCode: shipment.code));
+              },
+              child: const Text('عرض الطلبات'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في فتح تفاصيل الشحنة: $e')),
+      );
     }
   }
 }

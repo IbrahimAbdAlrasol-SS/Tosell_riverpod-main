@@ -1,4 +1,4 @@
-// lib/Features/orders/providers/shipments_provider.dart - مصحح
+// lib/Features/orders/providers/shipments_provider.dart
 import 'dart:async';
 import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:Tosell/Features/orders/services/shipments_service.dart';
@@ -10,12 +10,12 @@ part 'shipments_provider.g.dart';
 @riverpod
 class ShipmentsNotifier extends _$ShipmentsNotifier {
   final ShipmentsService _service = ShipmentsService();
-  List<Shipment> _cachedShipments = []; // ✅ cache للبيانات
+  List<Shipment> _cachedShipments = [];
 
   Future<ApiResponse<Shipment>> getAll({
     int page = 1,
     Map<String, dynamic>? queryParams,
-    bool forceRefresh = false, // ✅ خيار لإجبار التحديث
+    bool forceRefresh = false,
   }) async {
     try {
       final result = await _service.getAll(
@@ -23,7 +23,7 @@ class ShipmentsNotifier extends _$ShipmentsNotifier {
         page: page
       );
       
-      // ✅ تحديث الـ cache
+      // تحديث الـ cache
       if (page == 1 || forceRefresh) {
         _cachedShipments = result.data ?? [];
       } else {
@@ -36,7 +36,7 @@ class ShipmentsNotifier extends _$ShipmentsNotifier {
     }
   }
 
-  /// ✅ جلب شحنة معينة بالـ ID
+  /// جلب شحنة معينة بالـ ID
   Shipment? getShipmentById(String shipmentId) {
     try {
       return _cachedShipments.firstWhere(
@@ -47,7 +47,7 @@ class ShipmentsNotifier extends _$ShipmentsNotifier {
     }
   }
 
-  /// ✅ جلب شحنة معينة بالكود
+  /// جلب شحنة معينة بالكود
   Shipment? getShipmentByCode(String shipmentCode) {
     try {
       return _cachedShipments.firstWhere(
@@ -58,7 +58,7 @@ class ShipmentsNotifier extends _$ShipmentsNotifier {
     }
   }
 
-  /// ✅ تحديث شحنة معينة في الـ cache
+  /// تحديث شحنة معينة في الـ cache
   void updateShipmentInCache(Shipment updatedShipment) {
     final index = _cachedShipments.indexWhere(
       (shipment) => shipment.id == updatedShipment.id,
@@ -66,23 +66,22 @@ class ShipmentsNotifier extends _$ShipmentsNotifier {
     
     if (index != -1) {
       _cachedShipments[index] = updatedShipment;
-      // تحديث الـ state
       state = AsyncValue.data(_cachedShipments);
     }
   }
 
-  /// ✅ إضافة شحنة جديدة للـ cache
+  /// إضافة شحنة جديدة للـ cache
   void addShipmentToCache(Shipment newShipment) {
-    _cachedShipments.insert(0, newShipment); // إضافة في المقدمة
+    _cachedShipments.insert(0, newShipment);
     state = AsyncValue.data(_cachedShipments);
   }
 
-  /// ✅ مسح الـ cache
+  /// مسح الـ cache
   void clearCache() {
     _cachedShipments.clear();
   }
 
-  /// ✅ إحصائيات سريعة
+  /// إحصائيات سريعة
   Map<String, int> getQuickStats() {
     final totalShipments = _cachedShipments.length;
     final totalOrders = _cachedShipments.fold<int>(

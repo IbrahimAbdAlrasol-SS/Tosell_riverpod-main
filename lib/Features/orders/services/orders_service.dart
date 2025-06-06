@@ -11,20 +11,8 @@ class OrdersService {
       : baseClient =
             BaseClient<Order>(fromJson: (json) => Order.fromJson(json));
 
-  // For delegate/shipment orders (استحصال)
+  // For merchant orders (الطلبات الأساسية)
   Future<ApiResponse<Order>> getOrders(
-      {int page = 1, Map<String, dynamic>? queryParams}) async {
-    try {
-      var result = await baseClient.getAll(
-          endpoint: '/order/delegate', page: page, queryParams: queryParams);
-      return result;
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  // For merchant orders (original)
-  Future<ApiResponse<Order>> getMerchantOrders(
       {int page = 1, Map<String, dynamic>? queryParams}) async {
     try {
       var result = await baseClient.getAll(
@@ -35,7 +23,19 @@ class OrdersService {
     }
   }
 
-  // ✅ تم إصلاح المشكلة - تغيير id إلى code
+  // For delegate/shipment orders (استحصال)
+  Future<ApiResponse<Order>> getDelegateOrders(
+      {int page = 1, Map<String, dynamic>? queryParams}) async {
+    try {
+      var result = await baseClient.getAll(
+          endpoint: '/order/delegate', page: page, queryParams: queryParams);
+      return result;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // تغيير حالة الطلب
   Future<(Order?, String?)> changeOrderState({required String code}) async {
     try {
       var result = await baseClient.update(endpoint: '/order/$code/status/received');
@@ -45,7 +45,7 @@ class OrdersService {
     }
   }
 
-  // Advance order step (for merchants)
+  // تقدم خطوة الطلب (للتجار)
   Future<(Order?, String?)> advanceOrderStep({required String code}) async {
     try {
       var result = await baseClient.update(endpoint: '/order/$code/advance-step');
@@ -73,7 +73,7 @@ class OrdersService {
     }
   }
 
-  // ✅ تم إصلاح المشكلة - إضافة / قبل code
+  // التحقق من توفر الكود
   Future<bool> validateCode({required String code}) async {
     try {
       var result =
@@ -97,7 +97,7 @@ class OrdersService {
     }
   }
 
-  /// ✅ إنشاء شحنة محدث مع البيانات الصحيحة
+  // ✅ إنشاء شحنة محدث مع البيانات الصحيحة
   Future<bool> createShipment({
     required List<String> orderIds,
     String? delegateId,
@@ -131,6 +131,45 @@ class OrdersService {
       return result.code == 200 || result.code == 201;
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // ✅ إنشاء شحنة محسنة مع إرجاع بيانات الشحنة
+  Future<(bool success, String? shipmentId, String? error)> createShipmentAdvanced({
+    required List<String> orderIds,
+    String? delegateId,
+    String? merchantId,
+    bool delivered = true,
+  }) async {
+    try {
+      Map<String, dynamic> shipmentData = {
+        "orders": orderIds.map((id) => {"orderId": id}).toList(),
+      };
+
+      if (delivered) {
+        shipmentData["delivered"] = delivered;
+      }
+      
+      if (delegateId != null && delegateId.isNotEmpty) {
+        shipmentData["delegateId"] = delegateId;
+      }
+      
+      if (merchantId != null && merchantId.isNotEmpty) {
+        shipmentData["merchantId"] = merchantId;
+      }
+
+      var result = await baseClient.create(
+        endpoint: '/shipment/pick-up', 
+        data: shipmentData
+      );
+      
+      if (result.code == 200 || result.code == 201) {
+        return (true, result.singleData?.id, null);
+      } else {
+        return (false, null, result.message ?? 'فشل في إنشاء الشحنة');
+      }
+    } catch (e) {
+      return (false, null, e.toString());
     }
   }
 }

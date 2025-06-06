@@ -1,4 +1,4 @@
-// lib/Features/orders/screens/shipment_details_screen.dart - مصحح
+// lib/Features/orders/screens/shipment_details_screen.dart
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
@@ -9,10 +9,11 @@ import 'package:Tosell/core/router/app_router.dart';
 import 'package:Tosell/core/widgets/FillButton.dart';
 import 'package:Tosell/core/widgets/CustomAppBar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:Tosell/core/widgets/custom_section.dart';
-import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:Tosell/Features/orders/models/OrderFilter.dart';
 import 'package:Tosell/Features/orders/models/order_enum.dart';
+
+// استخدام نموذج الشحنة من orders لتجنب التضارب
+import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:Tosell/Features/orders/providers/shipments_provider.dart';
 
 class ShipmentDetailsScreen extends ConsumerStatefulWidget {
@@ -34,14 +35,14 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // جلب تفاصيل الشحنة إذا لزم الأمر
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadShipmentDetails();
     });
   }
 
   void _loadShipmentDetails() {
-    // يمكن إضافة API call هنا لجلب تفاصيل أكثر للشحنة إذا لزم الأمر
+    // تحديث بيانات الشحنات للتأكد من وجود البيانات الحديثة
+    ref.read(shipmentsNotifierProvider.notifier).getAll(page: 1);
   }
 
   @override
@@ -51,7 +52,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CustomAppBar(
               title: "تفاصيل الشحنة",
@@ -62,13 +63,40 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
             Expanded(
               child: shipmentsState.when(
                 data: (shipments) {
-                  // ✅ البحث عن الشحنة بالـ ID باستخدام الـ notifier
-                  final shipment = ref.read(shipmentsNotifierProvider.notifier)
-                      .getShipmentById(widget.shipmentId) ?? 
-                      Shipment(
-                        id: widget.shipmentId,
-                        code: widget.shipmentCode ?? 'غير محدد',
+                  // البحث عن الشحنة بالـ ID أو الكود
+                  Shipment? shipment;
+                  
+                  if (widget.shipmentId.isNotEmpty) {
+                    try {
+                      shipment = shipments.firstWhere(
+                        (s) => s.id == widget.shipmentId || s.code == widget.shipmentId,
                       );
+                    } catch (e) {
+                      // إذا لم نجد الشحنة، ننشئ واحدة افتراضية
+                      shipment = null;
+                    }
+                  }
+                  
+                  if (shipment == null && widget.shipmentCode != null) {
+                    try {
+                      shipment = shipments.firstWhere(
+                        (s) => s.code == widget.shipmentCode,
+                      );
+                    } catch (e) {
+                      shipment = null;
+                    }
+                  }
+                  
+                  // إذا لم نجد الشحنة، ننشئ واحدة افتراضية بالبيانات المتاحة
+                  shipment ??= Shipment(
+                    id: widget.shipmentId,
+                    code: widget.shipmentCode ?? 'غير محدد',
+                    ordersCount: 0,
+                    merchantsCount: 0,
+                    status: 0,
+                    type: 0,
+                    creationDate: DateTime.now().toIso8601String(),
+                  );
                   
                   return _buildShipmentDetails(context, shipment);
                 },
@@ -88,96 +116,112 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
         : DateTime.now();
 
     return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // معلومات الشحنة الأساسية
-          CustomSection(
+          _buildInfoCard(
+            context,
             title: "معلومات الشحنة",
-            icon: SvgPicture.asset(
-              "assets/svg/navigation_box.svg",
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
-            childrenRadius: const BorderRadius.all(Radius.circular(16)),
+            icon: "assets/svg/box.svg",
             children: [
               _buildShipmentInfoSection(context, shipment, date),
             ],
           ),
 
+          const Gap(AppSpaces.medium),
+
           // إحصائيات الشحنة
-          CustomSection(
+          _buildInfoCard(
+            context,
             title: "إحصائيات الشحنة",
-            icon: SvgPicture.asset(
-              "assets/svg/navigation_statstic.svg",
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
-            childrenRadius: const BorderRadius.all(Radius.circular(16)),
+            icon: "assets/svg/navigation_statstic.svg",
             children: [
               _buildStatisticsSection(context, shipment),
             ],
           ),
 
+          const Gap(AppSpaces.medium),
+
           // حالة الشحنة
-          CustomSection(
+          _buildInfoCard(
+            context,
             title: "حالة الشحنة",
-            icon: SvgPicture.asset(
-              "assets/svg/SpinnerGap.svg",
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
-            childrenRadius: const BorderRadius.all(Radius.circular(16)),
+            icon: "assets/svg/SpinnerGap.svg",
             children: [
               _buildStatusSection(context, shipment),
             ],
           ),
 
-          const Gap(AppSpaces.medium),
+          const Gap(AppSpaces.large),
 
           // أزرار العمليات
+          _buildActionButtons(context, shipment),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required String title,
+    required String icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
           Container(
-            padding: AppSpaces.allMedium,
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
             ),
-            child: Column(
+            child: Row(
               children: [
-                // زر عرض الطلبات
-                FillButton(
-                  label: "عرض طلبات الشحنة",
-                  onPressed: () => _viewShipmentOrders(shipment),
-                  icon: SvgPicture.asset(
-                    "assets/svg/box.svg",
-                    color: Colors.white,
-                    width: 24,
-                    height: 24,
-                  ),
-                  reverse: true,
+                SvgPicture.asset(
+                  icon,
+                  width: 24,
+                  height: 24,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                
-                const Gap(AppSpaces.medium),
-                
-                // زر تواصل مع الدعم
-                FillButton(
-                  label: "تواصل مع الدعم الفني",
-                  onPressed: () => _contactSupport(),
-                  reverse: true,
-                  color: Theme.of(context).colorScheme.secondary,
-                  icon: SvgPicture.asset(
-                    "assets/svg/support.svg",
-                    color: Colors.white,
-                    width: 24,
-                    height: 24,
+                const Gap(AppSpaces.small),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: children,
             ),
           ),
         ],
@@ -190,7 +234,6 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
       children: [
         IntrinsicHeight(
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildInfoItem(
                 context,
@@ -199,11 +242,10 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
                 shipment.code ?? "غير محدد",
               ),
               VerticalDivider(
-                width: 1,
+                width: 2,
                 thickness: 1,
-                color: Theme.of(context).colorScheme.outline,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               ),
-              const Gap(AppSpaces.small),
               _buildInfoItem(
                 context,
                 "التاريخ",
@@ -216,7 +258,6 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
         const Divider(),
         IntrinsicHeight(
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildInfoItem(
                 context,
@@ -225,11 +266,10 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
                 _getShipmentTypeText(shipment.type ?? 0),
               ),
               VerticalDivider(
-                width: 1,
+                width: 2,
                 thickness: 1,
-                color: Theme.of(context).colorScheme.outline,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
               ),
-              const Gap(AppSpaces.small),
               _buildInfoItem(
                 context,
                 "الحالة",
@@ -245,34 +285,28 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
   }
 
   Widget _buildStatisticsSection(BuildContext context, Shipment shipment) {
-    return Column(
-      children: [
-        IntrinsicHeight(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildInfoItem(
-                context,
-                "عدد الطلبات",
-                "assets/svg/box.svg",
-                "${shipment.ordersCount ?? 0}",
-              ),
-              VerticalDivider(
-                width: 1,
-                thickness: 1,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const Gap(AppSpaces.small),
-              _buildInfoItem(
-                context,
-                "عدد التجار",
-                "assets/svg/User.svg",
-                "${shipment.merchantsCount ?? 0}",
-              ),
-            ],
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          _buildInfoItem(
+            context,
+            "عدد الطلبات",
+            "assets/svg/box.svg",
+            "${shipment.ordersCount ?? 0}",
           ),
-        ),
-      ],
+          VerticalDivider(
+            width: 2,
+            thickness: 1,
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          ),
+          _buildInfoItem(
+            context,
+            "عدد التجار",
+            "assets/svg/User.svg",
+            "${shipment.merchantsCount ?? 0}",
+          ),
+        ],
+      ),
     );
   }
 
@@ -281,56 +315,52 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     final safeIndex = statusIndex < orderStatus.length ? statusIndex : 0;
     final status = orderStatus[safeIndex];
     
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SvgPicture.asset(
-                status.icon ?? "assets/svg/box.svg",
-                color: context.colorScheme.primary,
-              ),
+    return Row(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: status.color?.withOpacity(0.2) ?? Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  status.name ?? 'غير محدد',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: context.colorScheme.primary,
-                    fontFamily: "Tajawal",
-                  ),
-                ),
-                Text(
-                  status.description ?? 'لا توجد تفاصيل',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontFamily: "Tajawal",
-                  ),
-                ),
-              ],
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: SvgPicture.asset(
+              status.icon ?? "assets/svg/box.svg",
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
-        ],
-      ),
+        ),
+        const Gap(AppSpaces.medium),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                status.name ?? 'غير محدد',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const Gap(4),
+              Text(
+                status.description ?? 'لا توجد تفاصيل إضافية',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -342,50 +372,43 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     Widget? customWidget,
   }) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(3),
-              child: SvgPicture.asset(
-                iconPath,
-                width: 24,
-                height: 24,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      child: Row(
+        children: [
+          SvgPicture.asset(
+            iconPath,
+            width: 20,
+            height: 20,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const Gap(AppSpaces.small),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+                const Gap(4),
+                if (customWidget != null)
+                  customWidget
+                else
                   Text(
-                    title,
+                    value,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontFamily: "Tajawal",
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  if (customWidget != null)
-                    customWidget
-                  else
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontFamily: "Tajawal",
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -395,15 +418,15 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     final status = orderStatus[safeIndex];
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: status.color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         status.name ?? 'غير محدد',
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
           color: status.textColor ?? Colors.black,
         ),
@@ -411,42 +434,81 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     );
   }
 
+  Widget _buildActionButtons(BuildContext context, Shipment shipment) {
+    return Column(
+      children: [
+        // زر عرض الطلبات
+        FillButton(
+          label: "عرض طلبات الشحنة (${shipment.ordersCount ?? 0})",
+          onPressed: () => _viewShipmentOrders(shipment),
+          icon: SvgPicture.asset(
+            "assets/svg/box.svg",
+            color: Colors.white,
+            width: 24,
+            height: 24,
+          ),
+          reverse: true,
+        ),
+        
+        const Gap(AppSpaces.medium),
+        
+        // زر تواصل مع الدعم (اختياري)
+        FillButton(
+          label: "تواصل مع الدعم الفني",
+          onPressed: () => _contactSupport(),
+          reverse: true,
+          color: Theme.of(context).colorScheme.secondary,
+          icon: SvgPicture.asset(
+            "assets/svg/User.svg", // استخدم أيقونة متاحة
+            color: Colors.white,
+            width: 24,
+            height: 24,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildErrorState(BuildContext context, Object error) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Theme.of(context).colorScheme.error,
-          ),
-          const Gap(AppSpaces.medium),
-          Text(
-            'حدث خطأ في جلب تفاصيل الشحنة',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
               color: Theme.of(context).colorScheme.error,
             ),
-          ),
-          const Gap(AppSpaces.small),
-          Text(
-            error.toString(),
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.secondary,
+            const Gap(AppSpaces.medium),
+            Text(
+              'حدث خطأ في جلب تفاصيل الشحنة',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const Gap(AppSpaces.large),
-          FillButton(
-            label: "المحاولة مرة أخرى",
-            onPressed: () {
-              ref.refresh(shipmentsNotifierProvider);
-            },
-          ),
-        ],
+            const Gap(AppSpaces.small),
+            Text(
+              'يرجى المحاولة مرة أخرى',
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const Gap(AppSpaces.large),
+            FillButton(
+              label: "المحاولة مرة أخرى",
+              onPressed: () {
+                ref.refresh(shipmentsNotifierProvider);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -474,6 +536,9 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
   }
 
   void _contactSupport() {
-    
+    // يمكنك إضافة وظيفة التواصل مع الدعم هنا
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ميزة التواصل مع الدعم قيد التطوير')),
+    );
   }
 }

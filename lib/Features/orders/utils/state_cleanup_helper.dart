@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart';
 
-/// ✅ مساعد لتنظيف الـ state ومنع التضارب
+/// مساعد لتنظيف الـ state ومنع التضارب
 class StateCleanupHelper {
   
   /// تنظيف جميع providers المتعلقة بالتحديد
@@ -58,7 +58,7 @@ class StateCleanupHelper {
   }
 }
 
-/// ✅ Mixin للاستخدام في الصفحات التي تحتاج تنظيف state
+/// Mixin للاستخدام في الصفحات التي تحتاج تنظيف state
 mixin StateCleanupMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   
   @override

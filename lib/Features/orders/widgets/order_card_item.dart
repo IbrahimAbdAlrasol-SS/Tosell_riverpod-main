@@ -1,3 +1,4 @@
+// lib/Features/orders/widgets/order_card_item.dart - محدث
 import 'package:Tosell/Features/orders/models/Order.dart';
 import 'package:Tosell/Features/orders/models/order_enum.dart';
 import 'package:gap/gap.dart';
@@ -25,24 +26,24 @@ class OrderCardItem extends ConsumerWidget {
     DateTime date = DateTime.parse(order.creationDate ?? DateTime.now().toString());
     
     final selectedOrders = ref.watch(selectedOrdersProvider);
-    // Use code as fallback if id is null
+    // استخدم id كأولوية أولى، ثم code كبديل
     final orderId = order.id ?? order.code ?? '';
     final isSelected = selectedOrders.contains(orderId);
     
     return GestureDetector(
       onTap: () {
         if (isSelectionMode) {
-          // In selection mode, toggle selection
+          // في وضع التحديد، تبديل حالة التحديد
           if (orderId.isNotEmpty) {
             ref.read(selectedOrdersProvider.notifier).toggleOrder(orderId);
           }
         } else {
-          // Normal mode, call original onTap
+          // في الوضع العادي، استدعاء onTap الأصلي
           onTap?.call();
         }
       },
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.only(bottom: 5),
@@ -58,6 +59,19 @@ class OrderCardItem extends ConsumerWidget {
               ? theme.colorScheme.primary.withOpacity(0.1)
               : const Color(0xffEAEEF0),
             borderRadius: BorderRadius.circular(24),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,23 +83,28 @@ class OrderCardItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        // Checkbox in selection mode or box icon in normal mode
+                        // أيقونة التحديد أو الصندوق
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(isSelectionMode ? 8 : 1000),
-                            color: theme.colorScheme.surface,
+                            color: isSelectionMode && isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surface,
                             border: isSelectionMode ? Border.all(
                               color: isSelected 
                                 ? theme.colorScheme.primary
-                                : theme.colorScheme.outline
+                                : theme.colorScheme.outline,
+                              width: 1.5,
                             ) : null,
                           ),
                           child: isSelectionMode 
                             ? Icon(
-                                isSelected ? Icons.check : null,
-                                size: 16,
-                                color: theme.colorScheme.primary,
+                                isSelected ? Icons.check : Icons.check_box_outline_blank,
+                                size: 20,
+                                color: isSelected 
+                                  ? Colors.white
+                                  : theme.colorScheme.secondary,
                               )
                             : SvgPicture.asset(
                                 "assets/svg/box.svg",
@@ -94,8 +113,9 @@ class OrderCardItem extends ConsumerWidget {
                                 color: theme.colorScheme.primary,
                               ),
                         ),
-                        const SizedBox(width: 7),
+                        const SizedBox(width: 10),
                         
+                        // معلومات الطلب
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,6 +142,8 @@ class OrderCardItem extends ConsumerWidget {
                             ],
                           ),
                         ),
+                        
+                        // حالة الطلب
                         _buildOrderStatus(order.status ?? 0),
                         const Gap(AppSpaces.small),
                       ],
@@ -129,11 +151,19 @@ class OrderCardItem extends ConsumerWidget {
                   ],
                 ),
               ),
+              
+              // تفاصيل الطلب
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected 
+                      ? theme.colorScheme.primary.withOpacity(0.3)
+                      : theme.colorScheme.outline.withOpacity(0.3),
+                    width: 0.5,
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -160,7 +190,8 @@ class OrderCardItem extends ConsumerWidget {
                     Container(
                       height: 1,
                       width: double.infinity,
-                      color: theme.colorScheme.outline,
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      margin: const EdgeInsets.symmetric(vertical: 8),
                     ),
                     IntrinsicHeight(
                       child: Row(
@@ -192,21 +223,32 @@ class OrderCardItem extends ConsumerWidget {
   }
 
   Widget _buildOrderStatus(int index) {
-    // Ensure index is within bounds
-    if (index >= orderStatus.length) {
+    // التأكد من أن المؤشر ضمن النطاق
+    if (index >= orderStatus.length || index < 0) {
       index = 0;
     }
     
     return Container(
-      width: 100,
-      height: 26,
+      width: 90,
+      height: 28,
       decoration: BoxDecoration(
         color: orderStatus[index].color,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: (orderStatus[index].textColor ?? Colors.black).withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
       child: Center(
         child: Text(
-          orderStatus[index].name!,
+          orderStatus[index].name ?? 'غير محدد',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: orderStatus[index].textColor ?? Colors.black,
+          ),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -234,8 +276,8 @@ Widget buildSection(
               padding: padding ?? const EdgeInsets.all(0),
               child: SvgPicture.asset(
                 iconPath,
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 color: isRed
                     ? theme.colorScheme.error
                     : isGray
@@ -243,15 +285,15 @@ Widget buildSection(
                         : theme.colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: SizedBox(
                 width: textWidth,
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: theme.colorScheme.secondary,
                     fontFamily: "Tajawal",
                     overflow: TextOverflow.ellipsis,

@@ -1,4 +1,4 @@
-// lib/Features/orders/services/shipments_service.dart - محسن
+// lib/Features/orders/services/shipments_service.dart
 import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:Tosell/core/Client/BaseClient.dart';
 import 'package:Tosell/core/Client/ApiResponse.dart';
@@ -10,7 +10,7 @@ class ShipmentsService {
       : baseClient =
             BaseClient<Shipment>(fromJson: (json) => Shipment.fromJson(json));
 
-  /// ✅ جلب جميع الشحنات - محدث
+  /// جلب جميع الشحنات للتاجر
   Future<ApiResponse<Shipment>> getAll({
     int page = 1, 
     Map<String, dynamic>? queryParams
@@ -26,7 +26,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ جلب شحنة معينة بالـ ID
+  /// جلب شحنة معينة بالـ ID
   Future<Shipment?> getShipmentById(String shipmentId) async {
     try {
       var result = await baseClient.getById(
@@ -35,15 +35,13 @@ class ShipmentsService {
       );
       return result.singleData;
     } catch (e) {
-      // في حالة عدم وجود endpoint محدد، نعيد null
       return null;
     }
   }
 
-  /// ✅ جلب شحنة معينة بالكود
+  /// جلب شحنة معينة بالكود
   Future<Shipment?> getShipmentByCode(String shipmentCode) async {
     try {
-      // يمكن استخدام endpoint مختلف للبحث بالكود
       var result = await baseClient.get(
         endpoint: '/shipment/code/$shipmentCode'
       );
@@ -53,7 +51,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ إنشاء شحنة جديدة - محسن
+  /// إنشاء شحنة جديدة
   Future<(Shipment?, String?)> createShipment(Map<String, dynamic> shipmentData) async {
     try {
       var result = await baseClient.create(
@@ -71,7 +69,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ تحديث حالة الشحنة
+  /// تحديث حالة الشحنة
   Future<(Shipment?, String?)> updateShipmentStatus({
     required String shipmentId,
     required int newStatus,
@@ -92,7 +90,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ جلب طلبات شحنة معينة
+  /// جلب طلبات شحنة معينة
   Future<ApiResponse<dynamic>> getShipmentOrders({
     required String shipmentId,
     int page = 1,
@@ -108,7 +106,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ إحصائيات الشحنة
+  /// إحصائيات الشحنة
   Future<Map<String, dynamic>?> getShipmentStatistics(String shipmentId) async {
     try {
       var result = await BaseClient().get(
@@ -120,7 +118,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ حذف شحنة
+  /// حذف شحنة
   Future<bool> deleteShipment(String shipmentId) async {
     try {
       var result = await baseClient.delete('/shipment/$shipmentId');
@@ -130,7 +128,7 @@ class ShipmentsService {
     }
   }
 
-  /// ✅ البحث في الشحنات
+  /// البحث في الشحنات
   Future<ApiResponse<Shipment>> searchShipments({
     required String searchTerm,
     int page = 1,

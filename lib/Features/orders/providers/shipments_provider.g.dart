@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// lib/Features/orders/providers/shipments_provider.g.dart
 
 part of 'shipments_provider.dart';
 
