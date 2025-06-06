@@ -232,17 +232,18 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: isActive 
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: isActive ? [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
+            color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: isActive ? [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
+           
+              
+           
           ),
           child: Center(
             child: Text(
