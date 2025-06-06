@@ -21,4 +21,17 @@ class ShipmentsService {
       rethrow;
     }
   }
+
+  Future<bool> createShipment(Map<String, dynamic> shipmentData) async {
+    try {
+      var result = await baseClient.create(
+        endpoint: '/shipment/pick-up', 
+        data: shipmentData
+      );
+      
+      return result.code == 200 || result.code == 201;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

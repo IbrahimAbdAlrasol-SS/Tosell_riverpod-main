@@ -4,13 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SelectedOrdersNotifier extends StateNotifier<List<String>> {
   SelectedOrdersNotifier() : super([]);
 
-  /// تفعيل/إلغاء تحديد طلب معين
   void toggleOrder(String orderId) {
     if (state.contains(orderId)) {
-      // إزالة الطلب من القائمة
       state = state.where((id) => id != orderId).toList();
     } else {
-      // إضافة الطلب للقائمة
       state = [...state, orderId];
     }
   }

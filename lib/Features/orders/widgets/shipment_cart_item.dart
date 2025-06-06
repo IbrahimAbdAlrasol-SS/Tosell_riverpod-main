@@ -21,6 +21,7 @@ class ShipmentCartItem extends ConsumerWidget {
     var theme = Theme.of(context);
     DateTime date = DateTime.parse(
         shipment.creationDate ?? DateTime.now().toIso8601String());
+    
     return GestureDetector(
       onTap: () => onTap?.call(),
       child: Padding(
@@ -43,6 +44,7 @@ class ShipmentCartItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
+                        // أيقونة الشحنة
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
@@ -50,13 +52,15 @@ class ShipmentCartItem extends ConsumerWidget {
                             color: theme.colorScheme.surface,
                           ),
                           child: SvgPicture.asset(
-                            "assets/svg/box.svg",
+                            "assets/svg/navigation_add.svg", // استخدام أيقونة مناسبة للشحنة
                             width: 24,
                             height: 24,
                             color: theme.colorScheme.primary,
                           ),
                         ),
                         const SizedBox(width: 7),
+                        
+                        // معلومات الشحنة
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,13 +87,17 @@ class ShipmentCartItem extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        _buildOrderStatus(shipment.status ?? 0),
+                        
+                        // حالة الشحنة
+                        _buildShipmentStatus(shipment.status ?? 0, theme),
                         const Gap(AppSpaces.small),
                       ],
                     ),
                   ],
                 ),
               ),
+              
+              // تفاصيل الشحنة
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -102,9 +110,12 @@ class ShipmentCartItem extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          buildSection("طلبات/${shipment.ordersCount}",
-                              "assets/svg/48. Files.svg", theme,
-                              textColor: Colors.black),
+                          buildSection(
+                            "الطلبات: ${shipment.ordersCount ?? 0}",
+                            "assets/svg/box.svg", 
+                            theme,
+                            textColor: Colors.black
+                          ),
                           VerticalDivider(
                             width: 1,
                             thickness: 1,
@@ -112,13 +123,36 @@ class ShipmentCartItem extends ConsumerWidget {
                           ),
                           const Gap(AppSpaces.small),
                           buildSection(
-                              "التجار/${shipment.merchantsCount}",
-                              "assets/svg/User.svg",
-                              theme,
-                              textColor: Colors.black),
+                            "التجار: ${shipment.merchantsCount ?? 0}",
+                            "assets/svg/User.svg",
+                            theme,
+                            textColor: Colors.black
+                          ),
                         ],
                       ),
                     ),
+                    
+                    // معلومات إضافية إذا كانت متوفرة
+                    if (shipment.type != null) ...[
+                      Container(
+                        height: 1,
+                        width: double.infinity,
+                        color: theme.colorScheme.outline,
+                      ),
+                      IntrinsicHeight(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            buildSection(
+                              _getShipmentTypeText(shipment.type!),
+                              "assets/svg/navigation_add.svg",
+                              theme,
+                              textColor: Colors.black
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -129,25 +163,41 @@ class ShipmentCartItem extends ConsumerWidget {
     );
   }
 
-  Widget _buildOrderStatus(int index) {
-    // التأكد من أن الفهرس ضمن الحدود المسموحة
-    if (index >= orderStatus.length) {
-      index = 0;
+  Widget _buildShipmentStatus(int statusIndex, ThemeData theme) {
+    int safeIndex = statusIndex;
+    if (safeIndex < 0 || safeIndex >= orderStatus.length) {
+      safeIndex = 0;
     }
     
     return Container(
       width: 100,
       height: 26,
       decoration: BoxDecoration(
-        color: orderStatus[index].color,
+        color: orderStatus[safeIndex].color,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Center(
         child: Text(
-          orderStatus[index].name!,
+          orderStatus[safeIndex].name ?? 'غير محدد',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: orderStatus[safeIndex].textColor ?? Colors.black,
+          ),
         ),
       ),
     );
+  }
+
+  String _getShipmentTypeText(int type) {
+    switch (type) {
+      case 0:
+        return 'استحصال';
+      case 1:
+        return 'توصيل';
+      default:
+        return 'غير محدد';
+    }
   }
 }
 
