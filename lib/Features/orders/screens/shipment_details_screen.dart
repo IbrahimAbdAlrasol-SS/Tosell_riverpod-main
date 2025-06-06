@@ -45,6 +45,15 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
   }
 
   Future<void> _loadShipmentDetails() async {
+    // ✅ فحص صحة shipmentId
+    if (widget.shipmentId.isEmpty) {
+      setState(() {
+        _error = 'معرف الشحنة غير صحيح';
+        _isLoadingShipment = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoadingShipment = true;
       _error = null;
@@ -63,7 +72,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = 'خطأ في جلب تفاصيل الشحنة: ${e.toString()}';
           _isLoadingShipment = false;
         });
       }

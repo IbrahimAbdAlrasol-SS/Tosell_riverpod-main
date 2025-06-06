@@ -115,15 +115,15 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
     
-    // ✅ صفحة تفاصيل الشحنة الجديدة
+    // ✅ صفحة تفاصيل الشحنة الجديدة - مُصححة
     GoRoute(
       path: AppRoutes.shipmentDetails,
       builder: (context, state) {
-        final params = state.extra as Map<String, String>;
+        final params = state.extra as Map<String, dynamic>; // ✅ إصلاح Type
         return BackgroundWrapper(
           child: ShipmentDetailsScreen(
-            shipmentId: params['id']!,
-            shipmentCode: params['code'],
+            shipmentId: params['id']?.toString() ?? '', // ✅ تحويل آمن للنص
+            shipmentCode: params['code']?.toString(),
           ),
         );
       },

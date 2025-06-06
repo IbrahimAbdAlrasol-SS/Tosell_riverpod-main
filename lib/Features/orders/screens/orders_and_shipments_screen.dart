@@ -678,10 +678,10 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     try {
       if (shipment.id != null && shipment.id!.isNotEmpty) {
         // ✅ التنقل لصفحة تفاصيل الشحنة الجديدة
-        context.push(AppRoutes.shipmentDetails, extra: {
-          'id': shipment.id!,
-          'code': shipment.code,
-        });
+        context.push(AppRoutes.shipmentDetails, extra: <String, dynamic>{
+  'id': shipment.id!.toString(), // ✅ ضمان String
+  'code': shipment.code?.toString(),
+});
       } else {
         // Fallback: عرض dialog بسيط
         _showShipmentDetailsDialog(shipment);
