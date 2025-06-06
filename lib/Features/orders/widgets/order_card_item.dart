@@ -6,10 +6,7 @@ import 'package:Tosell/core/constants/spaces.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:Tosell/Features/orders/models/Order.dart';
 import 'package:Tosell/Features/orders/models/order_enum.dart';
-
-// ✅ تعريف الـ provider في مكان واحد فقط (سيكون متاح من orders_screen.dart)
-// إذا لم يعمل، فك التعليق عن هذا السطر:
-// final selectedOrdersProvider = StateProvider<Set<String>>((ref) => {});
+import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart';
 
 class OrderCardItem extends ConsumerWidget {
   final Order order;
@@ -28,40 +25,16 @@ class OrderCardItem extends ConsumerWidget {
     var theme = Theme.of(context);
     DateTime date = DateTime.parse(order.creationDate ?? DateTime.now().toString());
     
-    // ✅ محاولة قراءة الـ provider مع معالجة الأخطاء
-    Set<String> selectedOrders = {};
-    bool isSelected = false;
-    
-    try {
-      // يجب أن يكون متاح من orders_screen.dart
-      selectedOrders = ref.watch(selectedOrdersProvider);
-      final orderId = order.id ?? order.code ?? '';
-      isSelected = selectedOrders.contains(orderId);
-    } catch (e) {
-      // في حالة عدم توفر الـ provider، استخدم قيم افتراضية
-      selectedOrders = {};
-      isSelected = false;
-    }
+    // ✅ استخدام الـ provider الموحد بدون تكرار
+    final selectedOrders = ref.watch(selectedOrdersProvider);
+    final orderId = order.id ?? order.code ?? '';
+    final isSelected = selectedOrders.contains(orderId);
     
     return GestureDetector(
       onTap: () {
-        if (isSelectionMode) {
-          final orderId = order.id ?? order.code ?? '';
-          if (orderId.isNotEmpty) {
-            try {
-              final currentSelected = ref.read(selectedOrdersProvider);
-              if (isSelected) {
-                ref.read(selectedOrdersProvider.notifier).state = 
-                    currentSelected.where((id) => id != orderId).toSet();
-              } else {
-                ref.read(selectedOrdersProvider.notifier).state = 
-                    {...currentSelected, orderId};
-              }
-            } catch (e) {
-              // في حالة عدم توفر الـ provider، لا تفعل شيء
-              print('Provider not available: $e');
-            }
-          }
+        if (isSelectionMode && orderId.isNotEmpty) {
+          // ✅ استخدام الطريقة الآمنة للتحديد
+          ref.read(selectedOrdersProvider.notifier).toggleOrder(orderId);
         } else {
           onTap?.call();
         }
@@ -101,36 +74,8 @@ class OrderCardItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        // أيقونة التحديد أو الصندوق العادي
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(isSelectionMode ? 8 : 1000),
-                            color: isSelectionMode && isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.surface,
-                            border: isSelectionMode ? Border.all(
-                              color: isSelected 
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outline,
-                              width: 1.5,
-                            ) : null,
-                          ),
-                          child: isSelectionMode 
-                            ? Icon(
-                                isSelected ? Icons.check : Icons.check_box_outline_blank,
-                                size: 24,
-                                color: isSelected 
-                                  ? Colors.white
-                                  : theme.colorScheme.secondary,
-                              )
-                            : SvgPicture.asset(
-                                "assets/svg/box.svg",
-                                width: 24,
-                                height: 24,
-                                color: theme.colorScheme.primary,
-                              ),
-                        ),
+                        // ✅ أيقونة التحديد أو الصندوق العادي
+                        _buildSelectionIcon(theme, isSelectionMode, isSelected),
                         const SizedBox(width: 7),
                         Expanded(
                           child: Column(
@@ -231,7 +176,41 @@ class OrderCardItem extends ConsumerWidget {
     );
   }
 
+  /// ✅ إنشاء أيقونة التحديد بشكل منفصل
+  Widget _buildSelectionIcon(ThemeData theme, bool selectionMode, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(selectionMode ? 8 : 1000),
+        color: selectionMode && isSelected
+          ? theme.colorScheme.primary
+          : theme.colorScheme.surface,
+        border: selectionMode ? Border.all(
+          color: isSelected 
+            ? theme.colorScheme.primary
+            : theme.colorScheme.outline,
+          width: 1.5,
+        ) : null,
+      ),
+      child: selectionMode 
+        ? Icon(
+            isSelected ? Icons.check : Icons.check_box_outline_blank,
+            size: 24,
+            color: isSelected 
+              ? Colors.white
+              : theme.colorScheme.secondary,
+          )
+        : SvgPicture.asset(
+            "assets/svg/box.svg",
+            width: 24,
+            height: 24,
+            color: theme.colorScheme.primary,
+          ),
+    );
+  }
+
   Widget _buildOrderStatus(int index) {
+    // ✅ التأكد من صحة الفهرس
     if (index >= orderStatus.length || index < 0) {
       index = 0;
     }
@@ -309,6 +288,3 @@ Widget buildSection(
     ),
   );
 }
-
-// ✅ إضافة الـ provider هنا إذا لم يعمل من orders_screen.dart
-final selectedOrdersProvider = StateProvider<Set<String>>((ref) => {});

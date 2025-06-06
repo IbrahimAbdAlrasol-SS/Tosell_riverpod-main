@@ -1,4 +1,5 @@
 import 'package:Tosell/Features/orders/screens/orders_and_shipments_screen.dart';
+import 'package:Tosell/Features/orders/screens/shipment_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Tosell/Features/navigation.dart';
@@ -103,7 +104,8 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     ),
-    // TransactionDetaileScreen
+    
+    // ✅ صفحة تفاصيل الطلب
     GoRoute(
       path: AppRoutes.orderDetails,
       builder: (context, state) => BackgroundWrapper(
@@ -112,6 +114,21 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     ),
+    
+    // ✅ صفحة تفاصيل الشحنة الجديدة
+    GoRoute(
+      path: AppRoutes.shipmentDetails,
+      builder: (context, state) {
+        final params = state.extra as Map<String, String>;
+        return BackgroundWrapper(
+          child: ShipmentDetailsScreen(
+            shipmentId: params['id']!,
+            shipmentCode: params['code'],
+          ),
+        );
+      },
+    ),
+    
     GoRoute(
       path: AppRoutes.registerScreen,
       builder: (context, state) =>
@@ -252,6 +269,7 @@ class AppRoutes {
   static const String chats = '/chats';
   static const String chat = '/chat';
   static const String orderDetails = '/order-details';
+  static const String shipmentDetails = '/shipment-details'; // ✅ جديد
   static const String home = '/home';
   static const String orders = '/orders';
   static const String statistics = '/statistics';

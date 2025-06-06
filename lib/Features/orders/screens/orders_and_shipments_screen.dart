@@ -28,8 +28,10 @@ class OrdersAndShipmentsScreen extends ConsumerStatefulWidget {
   ConsumerState<OrdersAndShipmentsScreen> createState() => _OrdersAndShipmentsScreenState();
 }
 
-class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScreen> {
+class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScreen>
+    with SelectionStateCleanupMixin {
   late OrderFilter? _currentFilter;
+  final Set<String> _processedShipmentTaps = <String>{}; // منع الضغط المتكرر
 
   @override
   void initState() {
@@ -58,6 +60,8 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     super.didUpdateWidget(oldWidget);
     if (widget.filter != oldWidget.filter) {
       _currentFilter = widget.filter ?? OrderFilter();
+      // تنظيف حالة الضغط المتكرر
+      _processedShipmentTaps.clear();
       _fetchInitialData();
     }
   }
@@ -413,7 +417,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         },
         itemBuilder: (context, shipment, index) => ShipmentCartItem(
           shipment: shipment,
-          onTap: () => _navigateToShipmentDetails(shipment),
+          onTap: () => _navigateToShipmentDetails(shipment), // ✅ تم الإصلاح
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -475,7 +479,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         isLoading: isLoading,
         onPressed: _createShipment,
         icon: SvgPicture.asset(
-          "assets/svg/box.svg", // استخدام أيقونة متاحة
+          "assets/svg/box.svg",
           color: Colors.white,
           width: 24,
           height: 24,
@@ -555,23 +559,24 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
   void _switchTab(int tabIndex) {
     ref.read(activeTabProvider.notifier).state = tabIndex;
     
-    // إلغاء وضع التحديد عند تغيير التبويب
+    // ✅ إلغاء وضع التحديد عند تغيير التبويب
     if (tabIndex == 1) {
-      ref.read(selectionModeProvider.notifier).state = false;
-      ref.read(selectedOrdersProvider.notifier).clearSelection();
+      SelectionProvidersHelper.cleanupAllSelectionState(ref);
       
       // جلب بيانات الشحنات إذا لم تكن محملة
       ref.read(shipmentsNotifierProvider.notifier).getAll(page: 1);
     }
+    
+    // تنظيف حالة الضغط المتكرر
+    _processedShipmentTaps.clear();
   }
 
   void _toggleSelectionMode() {
     final currentMode = ref.read(selectionModeProvider);
-    ref.read(selectionModeProvider.notifier).state = !currentMode;
-    
-    // مسح التحديدات عند إلغاء الوضع
     if (currentMode) {
-      ref.read(selectedOrdersProvider.notifier).clearSelection();
+      disableSelectionMode();
+    } else {
+      enableSelectionMode();
     }
   }
 
@@ -586,7 +591,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     });
   }
 
-  /// إنشاء الشحنة
+  /// ✅ إنشاء الشحنة مع معالجة أفضل للأخطاء
   Future<void> _createShipment() async {
     final selectedOrderIds = ref.read(selectedOrdersProvider);
     if (selectedOrderIds.isEmpty) return;
@@ -602,16 +607,22 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("تم إنشاء الشحنة بنجاح"),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text("تم إنشاء الشحنة بنجاح (${selectedOrderIds.length} طلبات)"),
+                ],
+              ),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
             ),
           );
         }
         
         // إعادة تعيين الحالة
-        ref.read(selectionModeProvider.notifier).state = false;
-        ref.read(selectedOrdersProvider.notifier).clearSelection();
+        SelectionProvidersHelper.cleanupAllSelectionState(ref);
         
         // تحديث البيانات
         _fetchInitialData();
@@ -622,7 +633,13 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text("فشل في إنشاء الشحنة"),
+              content: const Row(
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("فشل في إنشاء الشحنة"),
+                ],
+              ),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -642,45 +659,72 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     }
   }
 
-  /// التنقل لتفاصيل الشحنة
+  /// ✅ التنقل لتفاصيل الشحنة مع منع الضغط المتكرر
   void _navigateToShipmentDetails(shipment) {
+    final shipmentKey = shipment.id ?? shipment.code ?? 'unknown';
+    
+    // ✅ منع الضغط المتكرر
+    if (_processedShipmentTaps.contains(shipmentKey)) {
+      return;
+    }
+    
+    _processedShipmentTaps.add(shipmentKey);
+    
+    // إزالة من القائمة بعد ثانيتين
+    Future.delayed(const Duration(seconds: 2), () {
+      _processedShipmentTaps.remove(shipmentKey);
+    });
+
     try {
-      // يمكن إضافة route مخصص هنا
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('تفاصيل الشحنة ${shipment.code}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('رقم الشحنة: ${shipment.code ?? "غير محدد"}'),
-              Text('عدد الطلبات: ${shipment.ordersCount ?? 0}'),
-              Text('عدد التجار: ${shipment.merchantsCount ?? 0}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('إغلاق'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push(AppRoutes.orders,
-                    extra: OrderFilter(
-                        shipmentId: shipment.id, 
-                        shipmentCode: shipment.code));
-              },
-              child: const Text('عرض الطلبات'),
-            ),
-          ],
-        ),
-      );
+      if (shipment.id != null && shipment.id!.isNotEmpty) {
+        // ✅ التنقل لصفحة تفاصيل الشحنة الجديدة
+        context.push(AppRoutes.shipmentDetails, extra: {
+          'id': shipment.id!,
+          'code': shipment.code,
+        });
+      } else {
+        // Fallback: عرض dialog بسيط
+        _showShipmentDetailsDialog(shipment);
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('خطأ في فتح تفاصيل الشحنة: $e')),
       );
     }
+  }
+
+  /// عرض dialog بسيط للشحنة (fallback)
+  void _showShipmentDetailsDialog(shipment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('تفاصيل الشحنة ${shipment.code}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('رقم الشحنة: ${shipment.code ?? "غير محدد"}'),
+            Text('عدد الطلبات: ${shipment.ordersCount ?? 0}'),
+            Text('عدد التجار: ${shipment.merchantsCount ?? 0}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إغلاق'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push(AppRoutes.orders,
+                  extra: OrderFilter(
+                      shipmentId: shipment.id, 
+                      shipmentCode: shipment.code));
+            },
+            child: const Text('عرض الطلبات'),
+          ),
+        ],
+      ),
+    );
   }
 }

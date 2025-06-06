@@ -25,9 +25,7 @@ class ShipmentsService {
       rethrow;
     }
   }
-
-  /// جلب شحنة معينة بالـ ID
-  Future<Shipment?> getShipmentById(String shipmentId) async {
+Future<Shipment?> getShipmentById(String shipmentId) async {
     try {
       var result = await baseClient.getById(
         endpoint: '/shipment', 
@@ -35,9 +33,11 @@ class ShipmentsService {
       );
       return result.singleData;
     } catch (e) {
+      print('Error fetching shipment by ID: $e');
       return null;
     }
   }
+
 
   /// جلب شحنة معينة بالكود
   Future<Shipment?> getShipmentByCode(String shipmentCode) async {
