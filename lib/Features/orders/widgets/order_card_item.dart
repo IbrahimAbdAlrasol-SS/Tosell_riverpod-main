@@ -1,41 +1,51 @@
-// lib/Features/orders/widgets/order_card_item.dart - محدث
-import 'package:Tosell/Features/orders/models/Order.dart';
-import 'package:Tosell/Features/orders/models/order_enum.dart';
+// lib/Features/orders/widgets/order_card_item.dart
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
 import 'package:Tosell/core/constants/spaces.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart';
+import 'package:Tosell/Features/orders/models/Order.dart';
+import 'package:Tosell/Features/orders/models/order_enum.dart';
+
+// ✅ إضافة import للـ provider (نفس الـ provider من orders_screen.dart)
+final selectedOrdersProvider = StateProvider<Set<String>>((ref) => {});
 
 class OrderCardItem extends ConsumerWidget {
   final Order order;
   final Function? onTap;
-  final bool isSelectionMode;
+  final bool isSelectionMode; // ✅ إضافة parameter جديد
 
   const OrderCardItem({
     required this.order,
     this.onTap,
-    this.isSelectionMode = false,
+    this.isSelectionMode = false, // ✅ قيمة افتراضية
     super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var theme = Theme.of(context);
-    DateTime date = DateTime.parse(order.creationDate ?? DateTime.now().toString());
+    DateTime date =
+        DateTime.parse(order.creationDate ?? DateTime.now().toString());
     
+    // ✅ مراقبة حالة التحديد
     final selectedOrders = ref.watch(selectedOrdersProvider);
-    // استخدم id كأولوية أولى، ثم code كبديل
     final orderId = order.id ?? order.code ?? '';
     final isSelected = selectedOrders.contains(orderId);
     
     return GestureDetector(
       onTap: () {
         if (isSelectionMode) {
-          // في وضع التحديد، تبديل حالة التحديد
+          // ✅ في وضع التحديد، تبديل حالة التحديد
           if (orderId.isNotEmpty) {
-            ref.read(selectedOrdersProvider.notifier).toggleOrder(orderId);
+            final currentSelected = ref.read(selectedOrdersProvider);
+            if (isSelected) {
+              ref.read(selectedOrdersProvider.notifier).state = 
+                  currentSelected.where((id) => id != orderId).toSet();
+            } else {
+              ref.read(selectedOrdersProvider.notifier).state = 
+                  {...currentSelected, orderId};
+            }
           }
         } else {
           // في الوضع العادي، استدعاء onTap الأصلي
@@ -43,9 +53,9 @@ class OrderCardItem extends ConsumerWidget {
         }
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        padding: const EdgeInsets.all(8.0),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 200), // ✅ تأثير انتقالي
           margin: const EdgeInsets.only(bottom: 5),
           padding: const EdgeInsets.only(right: 2, left: 2, bottom: 2),
           decoration: BoxDecoration(
@@ -53,10 +63,10 @@ class OrderCardItem extends ConsumerWidget {
               color: isSelected 
                 ? theme.colorScheme.primary
                 : theme.colorScheme.outline,
-              width: isSelected ? 2 : 1,
+              width: isSelected ? 2 : 1, // ✅ border أثخن عند التحديد
             ),
             color: isSelected 
-              ? theme.colorScheme.primary.withOpacity(0.1)
+              ? theme.colorScheme.primary.withOpacity(0.1) // ✅ لون خلفية عند التحديد
               : const Color(0xffEAEEF0),
             borderRadius: BorderRadius.circular(24),
             boxShadow: isSelected ? [
@@ -65,13 +75,7 @@ class OrderCardItem extends ConsumerWidget {
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
-            ] : [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            ] : null, // ✅ ظل عند التحديد
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,9 +87,9 @@ class OrderCardItem extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        // أيقونة التحديد أو الصندوق
+                        // ✅ أيقونة التحديد أو الصندوق العادي
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(isSelectionMode ? 8 : 1000),
                             color: isSelectionMode && isSelected
@@ -101,7 +105,7 @@ class OrderCardItem extends ConsumerWidget {
                           child: isSelectionMode 
                             ? Icon(
                                 isSelected ? Icons.check : Icons.check_box_outline_blank,
-                                size: 20,
+                                size: 24,
                                 color: isSelected 
                                   ? Colors.white
                                   : theme.colorScheme.secondary,
@@ -113,9 +117,7 @@ class OrderCardItem extends ConsumerWidget {
                                 color: theme.colorScheme.primary,
                               ),
                         ),
-                        const SizedBox(width: 10),
-                        
-                        // معلومات الطلب
+                        const SizedBox(width: 7),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,8 +144,6 @@ class OrderCardItem extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        
-                        // حالة الطلب
                         _buildOrderStatus(order.status ?? 0),
                         const Gap(AppSpaces.small),
                       ],
@@ -151,19 +151,15 @@ class OrderCardItem extends ConsumerWidget {
                   ],
                 ),
               ),
-              
-              // تفاصيل الطلب
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected 
-                      ? theme.colorScheme.primary.withOpacity(0.3)
-                      : theme.colorScheme.outline.withOpacity(0.3),
-                    width: 0.5,
-                  ),
+                  border: isSelected ? Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    width: 1,
+                  ) : null, // ✅ border للمحتوى عند التحديد
                 ),
                 child: Column(
                   children: [
@@ -190,8 +186,7 @@ class OrderCardItem extends ConsumerWidget {
                     Container(
                       height: 1,
                       width: double.infinity,
-                      color: theme.colorScheme.outline.withOpacity(0.3),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      color: theme.colorScheme.outline,
                     ),
                     IntrinsicHeight(
                       child: Row(
@@ -223,32 +218,26 @@ class OrderCardItem extends ConsumerWidget {
   }
 
   Widget _buildOrderStatus(int index) {
-    // التأكد من أن المؤشر ضمن النطاق
+    // ✅ التأكد من أن المؤشر ضمن النطاق
     if (index >= orderStatus.length || index < 0) {
       index = 0;
     }
     
     return Container(
-      width: 90,
-      height: 28,
+      width: 100,
+      height: 26,
       decoration: BoxDecoration(
         color: orderStatus[index].color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: (orderStatus[index].textColor ?? Colors.black).withOpacity(0.2),
-          width: 0.5,
-        ),
       ),
       child: Center(
         child: Text(
-          orderStatus[index].name ?? 'غير محدد',
+          orderStatus[index].name!,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: orderStatus[index].textColor ?? Colors.black,
           ),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -276,8 +265,8 @@ Widget buildSection(
               padding: padding ?? const EdgeInsets.all(0),
               child: SvgPicture.asset(
                 iconPath,
-                width: 20,
-                height: 20,
+                width: 24,
+                height: 24,
                 color: isRed
                     ? theme.colorScheme.error
                     : isGray
@@ -285,15 +274,15 @@ Widget buildSection(
                         : theme.colorScheme.primary,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: SizedBox(
                 width: textWidth,
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
                     color: theme.colorScheme.secondary,
                     fontFamily: "Tajawal",
                     overflow: TextOverflow.ellipsis,

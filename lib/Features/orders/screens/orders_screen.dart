@@ -1,3 +1,4 @@
+// lib/Features/orders/screens/orders_screen.dart
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,13 @@ import 'package:Tosell/Features/orders/models/OrderFilter.dart';
 import 'package:Tosell/Features/orders/widgets/order_card_item.dart';
 import 'package:Tosell/Features/orders/providers/orders_provider.dart';
 import 'package:Tosell/Features/orders/screens/orders_filter_bottom_sheet.dart';
-// Updated OrdersScreen to use filter and refresh automatically without pull-to-refresh UI
+import 'package:Tosell/Features/orders/services/orders_service.dart';
+// تأكد من وجود هذا في orders_screen.dart
+import 'package:Tosell/Features/orders/services/orders_service.dart';
+// ✅ إضافة providers بسيطة للتحديد المتعدد
+final selectedOrdersProvider = StateProvider<Set<String>>((ref) => {});
+final selectionModeProvider = StateProvider<bool>((ref) => false);
+final createShipmentLoadingProvider = StateProvider<bool>((ref) => false);
 
 class OrdersScreen extends ConsumerStatefulWidget {
   final OrderFilter? filter;
@@ -57,6 +64,9 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final ordersState = ref.watch(ordersNotifierProvider);
+    final selectedOrders = ref.watch(selectedOrdersProvider);
+    final isSelectionMode = ref.watch(selectionModeProvider);
+    final isCreatingShipment = ref.watch(createShipmentLoadingProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -66,6 +76,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // شريط البحث والفلترة الموجود
               Row(
                 children: [
                   const Gap(10),
@@ -140,22 +151,153 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                   ),
                 ],
               ),
+              
+              // ✅ شريط التحكم بالتحديد المتعدد
+              if (isSelectionMode)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.checklist,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'تم تحديد ${selectedOrders.length} طلب',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const Spacer(),
+                      
+                      // زر تحديد الكل / إلغاء تحديد الكل
+                      if (selectedOrders.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            ref.read(selectedOrdersProvider.notifier).state = {};
+                          },
+                          child: Text(
+                            'إلغاء الكل',
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
+                      
+                      TextButton(
+                        onPressed: () {
+                          ref.read(selectedOrdersProvider.notifier).state = {};
+                          ref.read(selectionModeProvider.notifier).state = false;
+                        },
+                        child: const Text('إنهاء التحديد'),
+                      ),
+                    ],
+                  ),
+                ),
+
               const Gap(5),
+              
+              // العنوان مع زر التحديد المتعدد
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  widget.filter == null
-                      ? ' جميع الطلبات'
-                      : 'جميع الطلبات "${orderStatus[widget.filter?.status ?? 0].name}"',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.filter == null
+                            ? 'جميع الطلبات'
+                            : 'جميع الطلبات "${orderStatus[widget.filter?.status ?? 0].name}"',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    
+                    // ✅ زر تفعيل وضع التحديد المتعدد
+                    GestureDetector(
+                      onTap: () {
+                        final currentMode = ref.read(selectionModeProvider);
+                        ref.read(selectionModeProvider.notifier).state = !currentMode;
+                        if (!currentMode) {
+                          // مسح التحديدات عند تفعيل الوضع
+                          ref.read(selectedOrdersProvider.notifier).state = {};
+                        }
+                      },
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelectionMode 
+                            ? Theme.of(context).colorScheme.primary
+                            : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isSelectionMode ? Icons.close : Icons.checklist,
+                          color: isSelectionMode 
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              
+              // المحتوى
               ordersState.when(
-                data: (data) => _buildUi(data),
+                data: (data) => _buildUi(data, isSelectionMode),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) => Center(child: Text(err.toString())),
               ),
+              
+              // ✅ زر إنشاء الشحنة (يظهر عند تحديد طلبات)
+              if (isSelectionMode && selectedOrders.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: FillButton(
+                    label: "إنشاء شحنة (${selectedOrders.length})",
+                    isLoading: isCreatingShipment,
+                    onPressed: isCreatingShipment ? null : () => _createShipment(),
+                    icon: SvgPicture.asset(
+                      "assets/svg/box.svg",
+                      color: Colors.white,
+                      width: 24,
+                      height: 24,
+                    ),
+                    reverse: true,
+                  ),
+                ),
             ],
           ),
         ),
@@ -163,10 +305,10 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
     );
   }
 
-  Expanded _buildUi(List<Order> data) {
+  Expanded _buildUi(List<Order> data, bool isSelectionMode) {
     return Expanded(
       child: GenericPagedListView(
-         key: ValueKey(widget.filter?.toJson()),
+        key: ValueKey(widget.filter?.toJson()),
         noItemsFoundIndicatorBuilder: _buildNoItemsFound(),
         fetchPage: (pageKey, _) async {
           return await ref.read(ordersNotifierProvider.notifier).getAll(
@@ -176,7 +318,12 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         },
         itemBuilder: (context, order, index) => OrderCardItem(
           order: order,
-          onTap: () => context.push(AppRoutes.orderDetails, extra: order.code),
+          isSelectionMode: isSelectionMode, // ✅ تمرير وضع التحديد
+          onTap: () {
+            if (!isSelectionMode) {
+              context.push(AppRoutes.orderDetails, extra: order.code);
+            }
+          },
         ),
       ),
     );
@@ -196,7 +343,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         ),
         const SizedBox(height: 7),
         Text(
-          'اضغط على زر “جديد” لإضافة طلب جديد و ارساله الى زبونك',
+          'اضغط على زر "جديد" لإضافة طلب جديد و ارساله الى زبونك',
           style: context.textTheme.bodySmall!.copyWith(
             fontWeight: FontWeight.w500,
             color: const Color(0xff698596),
@@ -216,5 +363,72 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
         )
       ],
     );
+  }
+
+  // ✅ وظيفة إنشاء الشحنة
+  Future<void> _createShipment() async {
+    final selectedOrderIds = ref.read(selectedOrdersProvider).toList();
+    if (selectedOrderIds.isEmpty) return;
+
+    ref.read(createShipmentLoadingProvider.notifier).state = true;
+    
+    try {
+      final success = await OrdersService().createShipment(
+        orderIds: selectedOrderIds,
+        delivered: true,
+      );
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text("تم إنشاء الشحنة بنجاح (${selectedOrderIds.length} طلبات)"),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        
+        // إعادة تعيين الحالة
+        ref.read(selectionModeProvider.notifier).state = false;
+        ref.read(selectedOrdersProvider.notifier).state = {};
+        
+        // تحديث البيانات
+        ref.refresh(ordersNotifierProvider);
+        
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("فشل في إنشاء الشحنة"),
+                ],
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("حدث خطأ: ${e.toString()}"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      ref.read(createShipmentLoadingProvider.notifier).state = false;
+    }
   }
 }

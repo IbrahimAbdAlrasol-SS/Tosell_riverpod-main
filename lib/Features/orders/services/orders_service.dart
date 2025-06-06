@@ -11,7 +11,6 @@ class OrdersService {
       : baseClient =
             BaseClient<Order>(fromJson: (json) => Order.fromJson(json));
 
-  // For merchant orders (الطلبات الأساسية)
   Future<ApiResponse<Order>> getOrders(
       {int page = 1, Map<String, dynamic>? queryParams}) async {
     try {
@@ -22,6 +21,7 @@ class OrdersService {
       rethrow;
     }
   }
+
 
   // For delegate/shipment orders (استحصال)
   Future<ApiResponse<Order>> getDelegateOrders(
@@ -84,20 +84,17 @@ class OrdersService {
     }
   }
 
-  Future<(Order? order, String? error)> addOrder(
-      {required AddOrderForm orderForm}) async {
+  Future<(Order? order, String? error)> addOrder(AddOrderForm form) async {
     try {
       var result =
-          await baseClient.create(endpoint: '/order', data: orderForm.toJson());
+          await baseClient.create(endpoint: '/order', data: form.toJson());
       if (result.singleData == null) return (null, result.message);
-
       return (result.singleData, null);
     } catch (e) {
       rethrow;
     }
   }
 
-  // ✅ إنشاء شحنة محدث مع البيانات الصحيحة
   Future<bool> createShipment({
     required List<String> orderIds,
     String? delegateId,
@@ -133,6 +130,7 @@ class OrdersService {
       rethrow;
     }
   }
+
 
   // ✅ إنشاء شحنة محسنة مع إرجاع بيانات الشحنة
   Future<(bool success, String? shipmentId, String? error)> createShipmentAdvanced({
