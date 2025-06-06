@@ -1,4 +1,7 @@
-import 'package:Tosell/Features/orders/screens/orders_and_shipments_screen.dart';
+// lib/core/router/app_router.dart - التحديث المطلوب
+// فقط تغيير import واستدعاء الصفحة الجديدة
+
+import 'package:Tosell/Features/orders/screens/orders_and_shipments_screen.dart'; // ✅ استيراد الصفحة المحدثة
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Tosell/Features/navigation.dart';
@@ -10,7 +13,8 @@ import 'package:Tosell/Features/orders/models/OrderFilter.dart';
 import 'package:Tosell/Features/profile/models/transaction.dart';
 import 'package:Tosell/Features/order/screens/order_screen.dart';
 import 'package:Tosell/Features/profile/screens/zones_screen.dart';
-import 'package:Tosell/Features/orders/screens/orders_screen.dart';
+// استبدال import الصفحة القديمة
+// import 'package:Tosell/Features/orders/screens/orders_screen.dart'; // ❌ الصفحة القديمة
 import 'package:Tosell/Features/profile/screens/logout_Screen.dart';
 import 'package:Tosell/Features/order/screens/order_completed.dart';
 import 'package:Tosell/Features/order/screens/add_order_screen.dart';
@@ -70,10 +74,6 @@ final GoRouter appRouter = GoRouter(
           const BackgroundWrapper(child: OrderCompleted()),
     ),
 
-    // GoRoute(
-    //   path: AppRoutes.cart,
-    //   builder: (context, state) => const CartPage(),
-    // ),
     GoRoute(
       path: AppRoutes.order,
       builder: (context, state) =>
@@ -103,7 +103,7 @@ final GoRouter appRouter = GoRouter(
         ),
       ),
     ),
-    // TransactionDetaileScreen
+    
     GoRoute(
       path: AppRoutes.orderDetails,
       builder: (context, state) => BackgroundWrapper(
@@ -196,12 +196,13 @@ final GoRouter appRouter = GoRouter(
             transitionsBuilder: _slideFromLeftTransition,
           ),
         ),
+        // ✅ تحديث صفحة الطلبات لتستخدم الصفحة الجديدة
         GoRoute(
           path: AppRoutes.orders,
           pageBuilder: (context, state) => CustomTransitionPage(
             key: state.pageKey,
             child: BackgroundWrapper(
-                child: OrdersAndShipmentsScreen(
+                child: OrdersAndShipmentsScreen( // ✅ استخدام الصفحة الجديدة
               filter: state.extra as OrderFilter?,
             )),
             transitionsBuilder: _slideFromLeftTransition,
@@ -253,7 +254,7 @@ class AppRoutes {
   static const String chat = '/chat';
   static const String orderDetails = '/order-details';
   static const String home = '/home';
-  static const String orders = '/orders';
+  static const String orders = '/orders'; // ✅ هذا الآن يشير للصفحة الجديدة
   static const String statistics = '/statistics';
   static const String myProfile = '/my_profile';
   static const String editProfile = '/edit_profile';

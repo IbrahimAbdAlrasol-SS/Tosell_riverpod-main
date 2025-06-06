@@ -1,3 +1,4 @@
+// lib/Features/orders/services/shipments_service.dart
 import 'package:Tosell/Features/orders/models/Shipment.dart';
 import 'package:Tosell/core/Client/BaseClient.dart';
 import 'package:Tosell/core/Client/ApiResponse.dart';
@@ -9,11 +10,12 @@ class ShipmentsService {
       : baseClient =
             BaseClient<Shipment>(fromJson: (json) => Shipment.fromJson(json));
 
+
   Future<ApiResponse<Shipment>> getAll(
       {int page = 1, Map<String, dynamic>? queryParams}) async {
     try {
       var result = await baseClient.getAll(
-          endpoint: '/shipment/my-shipments',
+          endpoint: '/shipment/merchant/my-shipments', 
           page: page,
           queryParams: queryParams);
       return result;

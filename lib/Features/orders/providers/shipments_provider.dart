@@ -6,12 +6,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'shipments_provider.g.dart';
 
+
+
 @riverpod
 class ShipmentsNotifier extends _$ShipmentsNotifier {
   final ShipmentsService _service = ShipmentsService();
 
   Future<ApiResponse<Shipment>> getAll(
-      {int page = 1, Map<String, dynamic>? queryParams}) async {
+      {int page = 1,
+       Map<String, dynamic>? queryParams}) async {
     return (await _service.getAll(queryParams: queryParams, page: page));
   }
 

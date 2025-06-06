@@ -1,3 +1,4 @@
+// lib/Features/orders/services/orders_service.dart
 import 'package:Tosell/Features/orders/models/Order.dart';
 import 'package:Tosell/core/Client/BaseClient.dart';
 import 'package:Tosell/core/Client/ApiResponse.dart';
@@ -96,8 +97,32 @@ class OrdersService {
     }
   }
 
-  Future<bool> createShipment(Map<String, dynamic> shipmentData) async {
+  /// ✅ إنشاء شحنة محدث مع البيانات الصحيحة
+  Future<bool> createShipment({
+    required List<String> orderIds,
+    String? delegateId,
+    String? merchantId,
+    bool delivered = true,
+  }) async {
     try {
+      // تحضير البيانات حسب ما طلبه الباك إند
+      Map<String, dynamic> shipmentData = {
+        "orders": orderIds.map((id) => {"orderId": id}).toList(),
+      };
+
+      // إضافة البيانات الاختيارية فقط إذا كانت موجودة
+      if (delivered) {
+        shipmentData["delivered"] = delivered;
+      }
+      
+      if (delegateId != null && delegateId.isNotEmpty) {
+        shipmentData["delegateId"] = delegateId;
+      }
+      
+      if (merchantId != null && merchantId.isNotEmpty) {
+        shipmentData["merchantId"] = merchantId;
+      }
+
       var result = await baseClient.create(
         endpoint: '/shipment/pick-up', 
         data: shipmentData

@@ -1,3 +1,4 @@
+// lib/Features/orders/models/Shipment.dart
 class Shipment {
   String? code;
   int? type;
@@ -8,15 +9,16 @@ class Shipment {
   bool? deleted;
   String? creationDate;
 
-  Shipment(
-      {this.code,
-      this.ordersCount,
-      this.merchantsCount,
-      this.type,
-      this.status,
-      this.id,
-      this.deleted,
-      this.creationDate});
+  Shipment({
+    this.code,
+    this.ordersCount,
+    this.merchantsCount,
+    this.type,
+    this.status,
+    this.id,
+    this.deleted,
+    this.creationDate,
+  });
 
   Shipment.fromJson(Map<String, dynamic> json) {
     code = json['code'];
