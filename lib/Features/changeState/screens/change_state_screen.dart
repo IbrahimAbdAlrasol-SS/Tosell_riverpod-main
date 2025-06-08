@@ -448,7 +448,6 @@ class _ChangeStateScreenState extends ConsumerState<ChangeStateScreen> {
       onTap: () => showModalBottomSheet(
         context: context,
         isScrollControlled: true,
-        // Remove isScrollControlled or keep it only if you really need scrolling
         builder: (BuildContext context) {
           return SizedBox(
             height: 660,
@@ -497,7 +496,7 @@ class _ChangeStateScreenState extends ConsumerState<ChangeStateScreen> {
                           state.name!,
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w400,
                             color: context.colorScheme.primary,
                             fontFamily: "Tajawal",
                           ),

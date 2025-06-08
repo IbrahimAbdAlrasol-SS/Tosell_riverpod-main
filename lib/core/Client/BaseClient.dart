@@ -117,7 +117,7 @@ class BaseClient<T> {
       final response = await _dio.delete(endpoint);
       return _handleResponse(response);
     } on DioException catch (e) {
-      return _handleDioError(e);
+      return _handleDioError(e); // ont 
     }
   }
 

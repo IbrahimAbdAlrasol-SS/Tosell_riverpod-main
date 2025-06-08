@@ -1,4 +1,3 @@
-// lib/Features/orders/models/Shipment.dart
 class Shipment {
   String? code;
   int? type;

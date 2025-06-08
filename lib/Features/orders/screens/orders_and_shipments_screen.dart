@@ -1,4 +1,3 @@
-// lib/Features/orders/screens/orders_and_shipments_screen.dart
 import 'package:gap/gap.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +14,6 @@ import 'package:Tosell/Features/orders/models/OrderFilter.dart';
 import 'package:Tosell/Features/orders/widgets/order_card_item.dart';
 import 'package:Tosell/Features/orders/providers/orders_provider.dart';
 import 'package:Tosell/Features/orders/providers/orders_selection_provider.dart';
-import 'package:Tosell/Features/orders/providers/shipments_provider.dart';
 import 'package:Tosell/Features/orders/widgets/shipment_cart_item.dart';
 import 'package:Tosell/Features/orders/screens/orders_filter_bottom_sheet.dart';
 import 'package:Tosell/Features/orders/services/orders_service.dart';
@@ -42,15 +40,13 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
 
   void _fetchInitialData() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // جلب الطلبات
       ref.read(ordersNotifierProvider.notifier).getAll(
         page: 1,
         queryParams: _currentFilter?.toJson(),
       );
       
-      // جلب الشحنات إذا كان التبويب نشط
       if (ref.read(activeTabProvider) == 1) {
-        ref.read(shipmentsNotifierProvider.notifier).getAll(page: 1);
+        ref.read(OrdersNotifierProvider.notifier).getAll(page: 1);
       }
     });
   }
@@ -81,27 +77,22 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // شريط البحث والفلترة
               _buildSearchAndFilterBar(),
               
               const Gap(8),
               
-              // التبويبات المحسنة
               _buildImprovedTabs(activeTab),
               
               const Gap(5),
               
-              // عنوان القسم مع أزرار التحكم
               _buildSectionHeader(activeTab, selectionMode, selectedOrders.length),
               
-              // المحتوى حسب التبويب النشط
               Expanded(
                 child: activeTab == 0 
                   ? _buildOrdersTab(selectionMode)
                   : _buildShipmentsTab(),
               ),
               
-              // زر إنشاء الشحنة (يظهر فقط عند تحديد طلبات)
               if (selectionMode && selectedOrders.isNotEmpty)
                 _buildCreateShipmentButton(selectedOrders.length, createShipmentLoading),
             ],
@@ -187,7 +178,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     );
   }
 
-  /// تبويبات محسنة ومصغرة
   Widget _buildImprovedTabs(int activeTab) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -219,7 +209,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     );
   }
 
-  /// عنصر تبويب مضغوط
   Widget _buildCompactTabItem({
     required String title,
     required bool isActive,
@@ -278,9 +267,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
             ),
           ),
           
-          // أزرار التحكم للطلبات فقط
           if (activeTab == 0) ...[
-            // عداد التحديد
             if (selectionMode && selectedCount > 0)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -300,7 +287,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
             
             const Gap(AppSpaces.small),
             
-            // قائمة التحكم
             if (selectionMode)
               PopupMenuButton<String>(
                 icon: Icon(
@@ -337,9 +323,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
                   ),
                 ],
               ),
-            
-            // زر التحديد المتعدد
-            GestureDetector(
+                        GestureDetector(
               onTap: _toggleSelectionMode,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -349,7 +333,7 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
                   color: selectionMode 
                     ? Theme.of(context).colorScheme.primary
                     : Colors.white,
-                  shape: BoxShape.circle,
+                  shape: BoxShape.circle, 
                   border: Border.all(
                     color: Theme.of(context).colorScheme.primary,
                     width: 1.5,
@@ -406,19 +390,19 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
   }
 
   Widget _buildShipmentsTab() {
-    final shipmentsState = ref.watch(shipmentsNotifierProvider);
+    final shipmentsState = ref.watch(ordersNotifierProvider);
     
     return shipmentsState.when(
       data: (data) => GenericPagedListView(
         noItemsFoundIndicatorBuilder: _buildNoShipmentsFound(),
         fetchPage: (pageKey, _) async {
-          return await ref.read(shipmentsNotifierProvider.notifier).getAll(
+          return await ref.read(ordersNotifierProvider.notifier).getAll(
             page: pageKey,
           );
         },
-        itemBuilder: (context, shipment, index) => ShipmentCartItem(
-          shipment: shipment,
-          onTap: () => _navigateToShipmentDetails(shipment), // ✅ تم الإصلاح
+        itemBuilder: (context, Order, index) => ShipmentCartItem(
+          shipment: Order,
+          onTap: () => _navigateToShipmentDetails(Order),
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -560,15 +544,12 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
   void _switchTab(int tabIndex) {
     ref.read(activeTabProvider.notifier).state = tabIndex;
     
-    // ✅ إلغاء وضع التحديد عند تغيير التبويب
     if (tabIndex == 1) {
       SelectionProvidersHelper.cleanupAllSelectionState(ref);
       
-      // جلب بيانات الشحنات إذا لم تكن محملة
-      ref.read(shipmentsNotifierProvider.notifier).getAll(page: 1);
+      ref.read(ordersNotifierProvider.notifier).getAll(page: 1);
     }
     
-    // تنظيف حالة الضغط المتكرر
     _processedShipmentTaps.clear();
   }
 
@@ -592,7 +573,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     });
   }
 
-  /// ✅ إنشاء الشحنة مع معالجة أفضل للأخطاء
   Future<void> _createShipment() async {
     final selectedOrderIds = ref.read(selectedOrdersProvider);
     if (selectedOrderIds.isEmpty) return;
@@ -622,13 +602,10 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
           );
         }
         
-        // إعادة تعيين الحالة
         SelectionProvidersHelper.cleanupAllSelectionState(ref);
         
-        // تحديث البيانات
         _fetchInitialData();
         
-        // التنقل لتبويب الشحنات
         _switchTab(1);
       } else {
         if (mounted) {
@@ -660,7 +637,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     }
   }
 
-  /// ✅ التنقل لتفاصيل الشحنة مع منع الضغط المتكرر
   void _navigateToShipmentDetails(shipment) {
     final shipmentKey = shipment.id ?? shipment.code ?? 'unknown';
     
@@ -694,7 +670,6 @@ class _OrdersAndShipmentsScreenState extends ConsumerState<OrdersAndShipmentsScr
     }
   }
 
-  /// عرض dialog بسيط للشحنة (fallback)
   void _showShipmentDetailsDialog(shipment) {
     showDialog(
       context: context,

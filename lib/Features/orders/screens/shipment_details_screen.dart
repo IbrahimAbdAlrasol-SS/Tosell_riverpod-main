@@ -22,9 +22,9 @@ import 'package:Tosell/Features/orders/services/shipments_service.dart';
 class ShipmentDetailsScreen extends ConsumerStatefulWidget {
   final String shipmentId;
   final String? shipmentCode;
-  
+
   const ShipmentDetailsScreen({
-    super.key, 
+    super.key,
     required this.shipmentId,
     this.shipmentCode,
   });
@@ -62,7 +62,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     try {
       final shipmentsService = ShipmentsService();
       final shipment = await shipmentsService.getShipmentById(widget.shipmentId);
-      
+
       if (mounted) {
         setState(() {
           _shipment = shipment;
@@ -92,7 +92,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
               subtitle: widget.shipmentCode ?? widget.shipmentId,
               showBackButton: true,
             ),
-            
+
             // محتوى الصفحة
             Expanded(
               child: _isLoadingShipment
@@ -157,9 +157,9 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
       children: [
         // تفاصيل الشحنة
         _buildShipmentInfo(),
-        
+
         const Gap(AppSpaces.medium),
-        
+
         // عنوان الطلبات
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpaces.medium),
@@ -181,9 +181,9 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
             ],
           ),
         ),
-        
+
         const Gap(AppSpaces.small),
-        
+
         // قائمة الطلبات
         Expanded(
           child: _buildShipmentOrders(),
@@ -196,7 +196,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
     final theme = Theme.of(context);
     DateTime? date;
     try {
-      date = _shipment!.creationDate != null 
+      date = _shipment!.creationDate != null
           ? DateTime.parse(_shipment!.creationDate!)
           : null;
     } catch (e) {
@@ -220,7 +220,6 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
       ),
       child: Column(
         children: [
-          // العنوان الرئيسي
           Row(
             children: [
               Container(
@@ -258,14 +257,12 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
                   ],
                 ),
               ),
-              // حالة الشحنة
               _buildShipmentStatus(_shipment!.status ?? 0),
             ],
           ),
-          
+
           const Gap(AppSpaces.medium),
-          
-          // تفاصيل إضافية
+
           Container(
             padding: const EdgeInsets.all(AppSpaces.medium),
             decoration: BoxDecoration(
@@ -331,12 +328,11 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
   }
 
   Widget _buildShipmentStatus(int statusIndex) {
-    // التأكد من صحة الفهرس
     int safeIndex = statusIndex;
     if (safeIndex < 0 || safeIndex >= orderStatus.length) {
       safeIndex = 0;
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -356,7 +352,7 @@ class _ShipmentDetailsScreenState extends ConsumerState<ShipmentDetailsScreen> {
 
   Widget _buildShipmentOrders() {
     final ordersState = ref.watch(ordersNotifierProvider);
-    
+
     return ordersState.when(
       data: (data) => GenericPagedListView(
         noItemsFoundIndicatorBuilder: _buildNoOrdersFound(),
